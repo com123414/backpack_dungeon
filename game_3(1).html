@@ -1,0 +1,2278 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>背包冒險</title>
+<style>
+:root{
+  --bg:#1a1a1a;--bg2:#242424;--bg3:#2e2e2e;
+  --border:#3a3a3a;--border2:#4a4a4a;
+  --text:#e8e6e0;--text2:#999;--text3:#666;
+  --amber:#EF9F27;--amber-bg:#2a2010;--amber-bd:#5a4010;
+  --blue:#378ADD;--blue-bg:#0f1e30;
+  --green:#5DCAA5;--green-bg:#0d2419;--green-bd:#1d5a44;
+  --red:#E24B4A;--red-bg:#2a0f0f;
+  --purple:#9b8de8;--purple-bg:#1e1830;
+  --gold:#f0c040;--gold-bg:#2a2000;--gold-bd:#5a4800;
+  --teal:#5dc4ca;--teal-bg:#0a1f22;--teal-bd:#1a5a60;
+  --shield-color:#60aaff;--shield-bg:#0a1830;
+  --rN:#888;--rN-bg:#222;--rR:#378ADD;--rR-bg:#0d1f33;
+  --rSR:#5DCAA5;--rSR-bg:#0a2018;--rSSR:#EF9F27;--rSSR-bg:#251800;
+  --rSP:#D4537E;--rSP-bg:#2a0d1a;
+  --rs:5px;--rm:8px;--rl:12px;--cs:52px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI','Microsoft JhengHei',sans-serif;font-size:14px;line-height:1.5;min-height:100vh;}
+button{font-family:inherit;cursor:pointer;border:.5px solid var(--border2);background:var(--bg3);color:var(--text);border-radius:var(--rs);padding:5px 12px;font-size:12px;transition:background .12s;}
+button:hover{background:#3a3a3a;}button:active{transform:scale(.98);}button:disabled{opacity:.4;cursor:not-allowed;}
+#app{display:flex;flex-direction:column;min-height:100vh;}
+#topbar{display:flex;align-items:center;gap:8px;padding:8px 16px;border-bottom:.5px solid var(--border);background:var(--bg2);flex-wrap:wrap;}
+.sc{background:var(--bg3);border:.5px solid var(--border);border-radius:var(--rs);padding:3px 10px;font-size:12px;color:var(--text2);position:relative;cursor:default;user-select:none;}
+.sc span{color:var(--text);font-weight:500;margin-left:4px;}
+.sc.agi span{color:#5DCAA5;}.sc.lck span{color:var(--amber);}.sc.chi span{color:var(--purple);}.sc.gold span{color:var(--gold);}
+.sc .tt{display:none;position:absolute;top:calc(100%+6px);left:0;background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--rm);padding:8px 12px;font-size:11px;color:var(--text2);white-space:nowrap;z-index:50;line-height:1.7;min-width:220px;}
+.sc:hover .tt,.sc.tip-show .tt{display:block;}
+#gt{font-size:14px;font-weight:500;color:var(--text2);margin-right:auto;}
+.screen{display:none;flex:1;}.screen.active{display:flex;}
+.panel{background:var(--bg2);border:.5px solid var(--border);border-radius:var(--rl);padding:12px 14px;}
+.pl{font-size:10px;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;}
+.rar{font-size:10px;padding:1px 6px;border-radius:3px;font-weight:500;}
+.rN{background:var(--rN-bg);color:var(--rN);}.rR{background:var(--rR-bg);color:var(--rR);}
+.rSR{background:var(--rSR-bg);color:var(--rSR);}.rSSR{background:var(--rSSR-bg);color:var(--rSSR);}.rSP{background:var(--rSP-bg);color:var(--rSP);}
+.srow{display:flex;gap:6px;flex-wrap:wrap;margin-top:3px;}
+.sp{font-size:10px;padding:1px 5px;border-radius:3px;font-weight:500;}
+.pagi{background:#0a1f1a;color:#5DCAA5;border:.5px solid #1d5a44;}
+.plck{background:var(--amber-bg);color:var(--amber);border:.5px solid var(--amber-bd);}
+.pchi{background:var(--purple-bg);color:var(--purple);border:.5px solid #4a3a7a;}
+.patk{background:#2a1a0a;color:#EF9F27;border:.5px solid #5a3a10;}
+.php2{background:var(--red-bg);color:#ff8888;border:.5px solid #5a2a2a;}
+.rtag{font-size:10px;padding:2px 6px;border-radius:3px;white-space:nowrap;}
+.tok{background:var(--amber-bg);color:var(--amber);border:.5px solid var(--amber-bd);}.tno{background:var(--bg3);color:var(--text3);}
+.rrow{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:.5px solid var(--border);}.rrow:last-child{border-bottom:none;}
+/* 配方放置模式 */
+.cell.place-preview{border:1.5px dashed var(--green);background:rgba(93,202,165,.15);}
+.cell.place-hover{border:1.5px solid var(--green);background:rgba(93,202,165,.30);}
+.cell.place-invalid{border:1.5px dashed var(--red);background:rgba(226,75,74,.10);}
+.cell.place-selected{border:1.5px solid var(--amber);background:var(--amber-bg);}
+#place-bar{display:none;background:var(--bg2);border:.5px solid var(--green);border-radius:var(--rl);padding:10px 14px;margin-top:4px;gap:8px;align-items:center;flex-wrap:wrap;}
+#place-bar.show{display:flex;}
+.place-recipe-name{font-size:13px;font-weight:500;color:var(--green);flex:1;}
+.place-hint{font-size:11px;color:var(--text2);}
+#place-rotate-btn{font-size:11px;padding:4px 12px;border-color:var(--amber);color:var(--amber);}
+#place-cancel-btn{font-size:11px;padding:4px 12px;border-color:var(--red);color:var(--red);}
+.btn-place{font-size:10px;padding:2px 8px;border-color:var(--green);color:var(--green);background:var(--green-bg);}
+.btn-place:disabled{opacity:.3;cursor:not-allowed;}
+.btn-green{background:var(--green-bg);border-color:var(--green);color:var(--green);}.btn-green:hover{background:#0f2e22;}
+.btn-amber{background:var(--amber-bg);border-color:var(--amber);color:var(--amber);}.btn-amber:hover{background:#3a2a08;}
+.btn-red{background:var(--red-bg);border-color:var(--red);color:var(--red);}
+
+/* CELLS */
+.cell{width:var(--cs);height:var(--cs);border-radius:var(--rs);border:.5px solid var(--border);background:var(--bg3);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:border-color .12s,background .12s;user-select:none;position:relative;}
+.cell:hover{border-color:var(--border2);}.cell.hi{background:var(--bg2);border-color:var(--border2);}
+.cell.sel{border:1.5px solid var(--blue);background:var(--blue-bg);}
+.cell.rhi{border:1.5px solid var(--amber);background:var(--amber-bg);}
+.cell.rhi-lit{border:1.5px solid var(--gold);background:var(--gold-bg);}
+.cell.enc{border:1.5px solid var(--purple);background:var(--purple-bg);}
+.cell.enchanted-active{border:1.5px solid var(--teal);background:var(--teal-bg);}
+.cell.new-item{border:1.5px solid var(--green);}
+.cell.rhi.sel,.cell.rhi-lit.sel,.cell.enchanted-active.sel{border:1.5px solid var(--blue);background:var(--blue-bg);}
+.ci{font-size:18px;line-height:1;}.cn{font-size:9px;color:var(--text3);text-align:center;line-height:1.2;margin-top:2px;max-width:48px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.enc-badge{position:absolute;top:2px;right:2px;font-size:8px;color:var(--purple);background:var(--purple-bg);border-radius:2px;padding:0 2px;border:.5px solid var(--purple);}
+
+/* TUTORIAL */
+#tutorial-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:300;align-items:center;justify-content:center;}
+#tutorial-overlay.show{display:flex;}
+#tutorial-modal{background:var(--bg2);border:.5px solid var(--border);border-radius:var(--rl);padding:28px;width:min(94vw,480px);max-height:88vh;overflow-y:auto;}
+.tut-page{display:none;}.tut-page.active{display:block;}
+.tut-title{font-size:18px;font-weight:500;margin-bottom:14px;color:var(--amber);}
+.tut-body{font-size:13px;color:var(--text2);line-height:1.9;}
+.tut-body b{color:var(--text);font-weight:500;}
+.tut-body .tag{display:inline-block;padding:1px 7px;border-radius:3px;font-size:11px;font-weight:500;margin:0 2px;}
+.tut-nav{display:flex;align-items:center;gap:8px;margin-top:20px;}
+.tut-dots{display:flex;gap:5px;margin:0 auto;}
+.tut-dot{width:7px;height:7px;border-radius:50%;background:var(--border2);transition:background .2s;}
+.tut-dot.on{background:var(--amber);}
+
+/* PREP */
+#screen-prep{flex-direction:row;align-items:stretch;}
+#prep-left{flex:1;display:flex;flex-direction:column;gap:12px;padding:16px;min-width:0;}
+#prep-right{width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:10px;padding:16px;border-left:.5px solid var(--border);background:var(--bg2);}
+#storage-grid{display:flex;flex-wrap:wrap;gap:5px;}
+.stk-chip{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:var(--rs);border:.5px solid var(--border2);background:var(--bg3);cursor:pointer;font-size:12px;transition:background .1s;}
+.stk-chip:hover{background:#383838;}.stk-chip.sel{border-color:var(--blue);background:var(--blue-bg);}
+.stk-cnt{font-size:10px;font-weight:500;color:var(--amber);background:var(--amber-bg);border-radius:3px;padding:0 4px;border:.5px solid var(--amber-bd);}
+.prep-nav{display:flex;gap:6px;margin-bottom:10px;}
+.prep-nav button{flex:1;font-size:11px;padding:5px 0;}
+.prep-nav button.active-tab{background:var(--bg2);border-color:var(--green);color:var(--green);}
+#prep-bag{display:grid;gap:3px;}
+#cbp{display:none;margin-top:8px;}#cbp.open{display:block;}
+.cbr{padding:8px 0;border-bottom:.5px solid var(--border);}.cbr:last-child{border-bottom:none;}
+.cbn{font-size:12px;font-weight:500;margin-bottom:4px;display:flex;align-items:center;gap:6px;}
+.cbg{display:grid;gap:2px;margin-bottom:4px;}
+.cbc{width:22px;height:22px;border-radius:3px;border:.5px solid var(--border2);background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:11px;}
+.cbc.empty{background:transparent;border-color:transparent;}
+.cbe{font-size:10px;color:var(--text2);line-height:1.5;}
+.blueprint-locked{opacity:.4;filter:grayscale(1);}
+.bp-badge{font-size:9px;padding:1px 5px;border-radius:3px;margin-left:4px;}
+.bp-known{background:var(--green-bg);color:var(--green);border:.5px solid var(--green-bd);}.bp-unknown{background:var(--bg3);color:var(--text3);}
+
+/* SHOP */
+#screen-shop{flex-direction:column;padding:16px;gap:12px;max-width:680px;margin:0 auto;width:100%;}
+.shop-cats{display:flex;gap:6px;}.shop-cat{font-size:12px;padding:5px 14px;border-radius:var(--rs);border:.5px solid var(--border2);background:var(--bg3);cursor:pointer;}
+.shop-cat.active{border-color:var(--amber);color:var(--amber);background:var(--amber-bg);}
+.shop-items{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:10px;}
+.shop-card{background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--rl);padding:12px;display:flex;flex-direction:column;gap:6px;}
+.shop-card-top{display:flex;align-items:center;gap:8px;}.shop-icon{font-size:22px;}
+.shop-name{font-size:13px;font-weight:500;}.shop-desc{font-size:11px;color:var(--text2);line-height:1.5;flex:1;}
+.shop-price{display:flex;align-items:center;justify-content:space-between;margin-top:4px;}
+.price-tag{font-size:13px;color:var(--gold);}
+.buy-btn{font-size:11px;padding:4px 12px;background:var(--gold-bg);border-color:var(--gold-bd);color:var(--gold);}
+.buy-btn:hover:not(:disabled){background:#3a2e00;}
+
+/* FORGE */
+#screen-forge{flex-direction:column;padding:16px;gap:12px;max-width:600px;margin:0 auto;width:100%;}
+.forge-pool{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;}
+.forge-chip{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:var(--rs);border:.5px solid var(--border2);background:var(--bg3);cursor:pointer;font-size:12px;}
+.forge-chip:hover{background:#383838;}.forge-chip.sel{border-color:var(--teal);background:var(--teal-bg);}
+.gem-card{background:var(--bg2);border:1.5px solid var(--teal);border-radius:var(--rl);padding:14px;}
+.gem-name{font-size:16px;font-weight:500;color:var(--teal);margin-bottom:6px;}
+.gem-desc{font-size:12px;color:var(--text2);line-height:1.7;}
+.gem-trait{margin-top:8px;font-size:12px;color:var(--amber);background:var(--amber-bg);border:.5px solid var(--amber-bd);border-radius:var(--rs);padding:4px 10px;display:inline-block;}
+
+/* MAP */
+#screen-map{flex-direction:column;padding:16px;gap:12px;max-width:680px;margin:0 auto;width:100%;}
+#floor-header{background:var(--bg2);border:.5px solid var(--border);border-radius:var(--rl);padding:12px 16px;display:flex;align-items:center;gap:12px;}
+.fh-floor{font-size:22px;font-weight:500;color:var(--amber);min-width:60px;}
+.fh-info{flex:1;}.fh-name{font-size:14px;font-weight:500;margin-bottom:2px;}.fh-sub{font-size:11px;color:var(--text2);}
+.fh-tags{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.fh-tag{font-size:10px;padding:2px 8px;border-radius:3px;border:.5px solid var(--border2);color:var(--text2);}
+#map-bag-wrap{background:var(--bg2);border:.5px solid var(--border);border-radius:var(--rl);padding:10px 14px;}
+.map-bag-hdr{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.map-bag-title{font-size:10px;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;}
+.map-stats{display:flex;gap:8px;margin-left:auto;}
+.ms{font-size:11px;color:var(--text2);}.ms span{font-weight:500;}
+.ms.agi span{color:#5DCAA5;}.ms.lck span{color:var(--amber);}.ms.chi span{color:var(--purple);}
+#map-bag{display:grid;gap:3px;}
+.map-cell{width:48px;height:48px;border-radius:var(--rs);border:.5px solid var(--border);background:var(--bg3);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:border-color .12s,background .12s;user-select:none;position:relative;}
+.map-cell:hover{border-color:var(--border2);}.map-cell.hi{background:var(--bg2);border-color:var(--border2);}
+.map-cell.rhi{border:1.5px solid var(--amber);background:var(--amber-bg);}
+.map-cell.rhi-lit{border:1.5px solid var(--gold);background:var(--gold-bg);}
+.map-cell.enc{border:1.5px solid var(--purple);background:var(--purple-bg);}
+.map-cell.enchanted-active{border:1.5px solid var(--teal);background:var(--teal-bg);}
+.map-cell.new-item{border:1.5px solid var(--green);}.map-cell.sel{border:1.5px solid var(--blue);background:var(--blue-bg);}
+.map-ci{font-size:16px;line-height:1;}.map-cn{font-size:8px;color:var(--text3);text-align:center;max-width:44px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+#node-select{background:var(--bg2);border:.5px solid var(--border);border-radius:var(--rl);padding:12px 14px;display:none;}
+#node-select.show{display:block;}
+.ns-title{font-size:11px;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;}
+.ns-grid{display:flex;gap:10px;}
+.ns-card{flex:1;border:.5px solid var(--border2);border-radius:var(--rm);padding:12px;cursor:pointer;background:var(--bg3);transition:border-color .12s,background .12s;display:flex;flex-direction:column;gap:5px;}
+.ns-card:hover{background:#363636;}
+.ns-card.type-rat{border-color:#2a3a1a;}.ns-card.type-rat:hover{border-color:#88cc44;background:#0a1a0a;}
+.ns-card.type-elite{border-color:#5a3a1a;}.ns-card.type-elite:hover{border-color:var(--amber);background:var(--amber-bg);}
+.ns-card.type-boss{border-color:#5a1a1a;}.ns-card.type-boss:hover{border-color:var(--red);background:var(--red-bg);}
+.ns-card.type-chest{border-color:#1a3a2a;}.ns-card.type-chest:hover{border-color:var(--green);background:var(--green-bg);}
+.ns-card.type-slot{border-color:#3a2a1a;}.ns-card.type-slot:hover{border-color:var(--amber);background:var(--amber-bg);}
+.ns-icon{font-size:22px;line-height:1;}.ns-name{font-size:13px;font-weight:500;}.ns-sub{font-size:10px;color:var(--text3);}
+.ns-stars{display:flex;gap:1px;}.ns-star{font-size:10px;color:var(--text3);}.ns-star.on{color:var(--amber);}
+
+/* BATTLE */
+#screen-battle{flex-direction:column;padding:16px;gap:10px;max-width:720px;margin:0 auto;width:100%;}
+.cb2{background:var(--bg2);border:.5px solid var(--border);border-radius:var(--rl);padding:10px 14px;display:flex;align-items:center;gap:12px;}
+.cname{font-size:13px;font-weight:500;min-width:72px;}
+.hw{flex:1;}.hl{font-size:11px;color:var(--text2);margin-bottom:3px;display:flex;justify-content:space-between;}
+.ht{height:7px;background:var(--bg3);border-radius:4px;overflow:hidden;position:relative;}
+.hf{height:100%;border-radius:4px;transition:width .4s;background:var(--green);}
+.hf.low{background:var(--amber);}.hf.crit{background:var(--red);}
+.shield-bar{position:absolute;top:0;right:0;height:100%;background:var(--shield-color);opacity:.7;border-radius:4px;transition:width .4s;}
+.ctags{display:flex;gap:4px;flex-wrap:wrap;min-width:60px;justify-content:flex-end;}
+.ct{font-size:10px;padding:2px 5px;border-radius:3px;border:.5px solid var(--border2);color:var(--text2);}
+#bsr{display:flex;gap:6px;flex-wrap:wrap;background:var(--bg2);border:.5px solid var(--border);border-radius:var(--rl);padding:8px 14px;align-items:center;}
+.bst{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text2);}
+.bv{font-weight:500;font-size:13px;}
+.bv.agi{color:#5DCAA5;}.bv.lck{color:var(--amber);}.bv.chi{color:var(--purple);}
+.bx2{font-size:9px;padding:1px 4px;background:var(--amber-bg);color:var(--amber);border-radius:3px;border:.5px solid var(--amber-bd);}
+.btmp{font-size:10px;color:var(--teal);background:var(--teal-bg);border:.5px solid var(--teal-bd);border-radius:3px;padding:1px 5px;}
+.thresh-tag{font-size:10px;padding:1px 6px;border-radius:3px;margin-left:2px;}
+.thresh-agi{background:#0a2a1a;color:#5DCAA5;border:.5px solid #1d5a44;}
+.thresh-lck{background:var(--amber-bg);color:var(--amber);border:.5px solid var(--amber-bd);}
+.thresh-chi{background:var(--purple-bg);color:var(--purple);border:.5px solid #4a3a7a;}
+#blw{background:var(--bg2);border:.5px solid var(--border);border-radius:var(--rl);padding:10px 14px;min-height:150px;max-height:220px;overflow-y:auto;}
+#bll{display:flex;flex-direction:column;gap:4px;}
+.ll{font-size:13px;line-height:1.5;}
+.lp{color:var(--blue);}.le{color:var(--red);}.ls{color:var(--text2);font-style:italic;}
+.lr{color:var(--amber);}.lc{color:#ffdd88;font-weight:500;}.lm{color:var(--text3);}
+.lw{color:var(--green);font-weight:500;}.la{color:#5DCAA5;}
+.lch{color:var(--purple);}.len{color:var(--purple);font-weight:500;}.lco{color:#aaddff;}
+.lpo{color:#88cc44;}.lgold{color:var(--gold);}.ll2{color:var(--amber);}
+.lparry{color:#88eeff;font-weight:500;}.ldefend{color:#aabbff;}.ltmp{color:var(--teal);}
+.lshield{color:var(--shield-color);font-weight:500;}.lmastery{color:var(--gold);font-weight:500;}
+.lheal{color:var(--green);}
+#aa{background:var(--bg2);border:.5px solid var(--border);border-radius:var(--rl);padding:10px 14px;}
+#al{font-size:11px;color:var(--text3);margin-bottom:8px;}
+#ab{display:flex;flex-wrap:wrap;gap:6px;}
+.ab{padding:7px 14px;font-size:13px;border-radius:var(--rs);border:.5px solid var(--border2);background:var(--bg3);color:var(--text);cursor:pointer;transition:background .1s;display:flex;align-items:center;gap:5px;}
+.ab:hover{background:#383838;}
+.ab.slash:hover{background:#2a1a0a;border-color:var(--amber);}
+.ab.pierce:hover{background:#0a2020;border-color:var(--green);}
+.ab.magic:hover{background:#180e30;border-color:var(--purple);}
+.ab.defend{border-color:#1a2a4a;}.ab.defend:hover{background:#0a1525;border-color:var(--blue);}
+.ab.parry{border-color:#1a3a4a;color:#88eeff;}.ab.parry:hover{background:#0a2030;border-color:#88eeff;}
+.ab.flee{border-color:#5a3a1a;color:var(--amber);}.ab.flee:hover{background:var(--amber-bg);}
+.ab.consume{border-color:#8a4a8a;color:#cc88cc;background:#1a0d1a;}
+.ab.consume:hover{background:#2a1030;border-color:#cc88cc;}
+/* 消耗選格overlay */
+#consume-overlay{display:none;position:absolute;inset:0;background:rgba(0,0,0,.6);z-index:10;border-radius:var(--rl);align-items:center;justify-content:center;flex-direction:column;gap:8px;}
+#consume-overlay.show{display:flex;}
+.consume-bag-grid{display:grid;gap:3px;}
+.consume-cell{width:48px;height:48px;border-radius:var(--rs);border:.5px solid var(--border);background:var(--bg3);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;user-select:none;position:relative;}
+.consume-cell.has-item{border-color:var(--border2);background:#1e1e1e;}
+.consume-cell.has-item:hover{border-color:#cc88cc;background:#2a1030;}
+.consume-cell.empty{opacity:.25;cursor:not-allowed;}
+.consume-cell-icon{font-size:16px;line-height:1;}
+.consume-cell-name{font-size:8px;color:var(--text3);text-align:center;max-width:44px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.consume-effect-hint{font-size:11px;color:#cc88cc;background:#1a0d1a;border:.5px solid #8a4a8a;border-radius:var(--rs);padding:4px 10px;text-align:center;}
+
+#enemy-info-bar{background:var(--bg2);border:.5px solid var(--border);border-radius:var(--rl);padding:8px 14px;font-size:12px;flex:1;}
+#enemy-forecast{color:var(--text2);margin-top:3px;min-height:16px;}.fw{color:var(--amber);}
+.fr{display:flex;align-items:center;gap:8px;}.sp2{flex:1;}
+
+/* SWAP */
+#swap-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center;}
+#swap-overlay.show{display:flex;}
+#swap-modal{background:var(--bg2);border:.5px solid var(--border);border-radius:var(--rl);padding:20px;width:min(94vw,640px);max-height:90vh;overflow-y:auto;}
+.swap-title{font-size:15px;font-weight:500;margin-bottom:4px;}
+.swap-desc{font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6;}
+.swap-cols{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:start;}
+.swap-col-title{font-size:10px;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;}
+.swap-grid{display:flex;flex-wrap:wrap;gap:4px;}
+.swap-mid{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 0;gap:6px;font-size:20px;color:var(--text3);}
+.swap-chip{display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:var(--rs);border:.5px solid var(--border2);background:var(--bg3);cursor:pointer;font-size:12px;}
+.swap-chip:hover{background:#383838;}.swap-chip.sel{border-color:var(--gold);background:var(--gold-bg);}
+.swap-new-chip{border-color:var(--green-bd);background:var(--green-bg);color:var(--green);}
+.swap-new-chip.sel{border-color:var(--gold);background:var(--gold-bg);color:var(--text);}
+.swap-footer{margin-top:16px;display:flex;gap:8px;align-items:center;}
+.swap-hint{font-size:11px;color:var(--text2);flex:1;}
+/* 戰鬥背包預覽（swap左側）*/
+.swap-bag-preview{display:grid;gap:2px;}
+.swap-cell{width:40px;height:40px;border-radius:4px;border:.5px solid var(--border2);background:var(--bg3);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;font-size:11px;transition:border-color .12s;position:relative;}
+.swap-cell.hi{background:var(--bg2);border-color:var(--border2);}
+.swap-cell.rhi{border:1.5px solid var(--amber);background:var(--amber-bg);}
+.swap-cell.sel{border:1.5px solid var(--gold);background:var(--gold-bg);}
+.swap-cell-icon{font-size:14px;line-height:1;}.swap-cell-name{font-size:7px;color:var(--text3);text-align:center;max-width:36px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+
+/* BP */
+#bp-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center;}
+#bp-overlay.show{display:flex;}
+#bp-modal{background:var(--bg2);border:1.5px solid var(--amber);border-radius:var(--rl);padding:24px;width:min(90vw,380px);text-align:center;}
+.bp-reveal-title{font-size:13px;color:var(--amber);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;}
+.bp-reveal-name{font-size:22px;font-weight:500;margin-bottom:12px;}
+.bp-reveal-grid{display:grid;gap:3px;margin:0 auto 12px;}
+.bp-reveal-cell{width:28px;height:28px;border-radius:4px;border:.5px solid var(--border2);background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:13px;}
+.bp-reveal-cell.empty{background:transparent;border-color:transparent;}
+.bp-reveal-pips{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:12px;}
+.bp-reveal-effect{font-size:12px;color:var(--text2);margin-bottom:16px;}
+/* 藍圖三選一 */
+#bp-choice-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:210;align-items:center;justify-content:center;}
+#bp-choice-overlay.show{display:flex;}
+#bp-choice-modal{background:var(--bg2);border:1.5px solid var(--amber);border-radius:var(--rl);padding:24px;width:min(94vw,560px);max-height:90vh;overflow-y:auto;}
+.bpc-title{font-size:13px;color:var(--amber);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;}
+.bpc-sub{font-size:12px;color:var(--text3);margin-bottom:18px;}
+.bpc-cards{display:flex;flex-direction:column;gap:10px;}
+.bpc-card{border:.5px solid var(--border2);border-radius:var(--rm);padding:14px;cursor:pointer;background:var(--bg3);transition:border-color .15s,background .15s;display:flex;gap:12px;align-items:flex-start;text-align:left;}
+.bpc-card:hover{border-color:var(--amber);background:var(--amber-bg);}
+.bpc-grid{display:grid;gap:2px;flex-shrink:0;}
+.bpc-cell{width:20px;height:20px;border-radius:3px;border:.5px solid var(--border2);background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:10px;}
+.bpc-cell.empty{background:transparent;border-color:transparent;}
+.bpc-info{flex:1;min-width:0;}
+.bpc-name{font-size:14px;font-weight:500;margin-bottom:4px;}
+.bpc-effect{font-size:11px;color:var(--text2);line-height:1.5;}
+.bpc-pips{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px;}
+
+/* RESULT */
+#screen-result{flex-direction:column;padding:16px;gap:12px;max-width:500px;margin:0 auto;width:100%;}
+.result-card{background:var(--bg2);border:.5px solid var(--border);border-radius:var(--rl);padding:20px;}
+.result-title{font-size:20px;font-weight:500;margin-bottom:8px;}
+.result-sub{font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:16px;}
+.result-items{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;}
+.result-chip{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:var(--rs);border:.5px solid var(--green-bd);background:var(--green-bg);font-size:13px;color:var(--green);}
+
+/* STAT POPUP */
+#stat-popup{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:150;align-items:center;justify-content:center;}
+#stat-popup.show{display:flex;}
+#stat-popup-inner{background:var(--bg2);border:1.5px solid var(--teal);border-radius:var(--rl);padding:22px;width:min(90vw,340px);text-align:center;}
+</style>
+</head>
+<body>
+<div id="app">
+<div id="topbar">
+  <span id="gt">背包冒險</span>
+  <div class="sc">HP <span id="thp">50/50</span></div>
+  <div class="sc">樓層 <span id="tfl">—</span></div>
+  <div class="sc agi" id="sc-agi" ontouchstart="toggleTip('sc-agi',true)" ontouchend="toggleTip('sc-agi',false)">
+    AGI <span id="tagi">0</span><span id="tagi-tmp" style="color:var(--teal);font-size:10px"></span>
+    <div class="tt">敏捷影響：<br>・連擊觸發機率（最多16連）<br>・迴避敵方攻擊機率<br>・被打時反擊機率<br>─────────<br>閾值 AGI≥10：連擊必至少2連<br>閾值 AGI≥20：連擊必至少4連</div>
+  </div>
+  <div class="sc lck" id="sc-lck" ontouchstart="toggleTip('sc-lck',true)" ontouchend="toggleTip('sc-lck',false)">
+    LCK <span id="tlck">0</span><span id="tlck-tmp" style="color:var(--teal);font-size:10px"></span>
+    <div class="tt">幸運影響：<br>・爆擊（傷害×2）機率<br>・閃電命中（LCK×10為中心額外傷害）<br>・撿到素材品質提升<br>・武器附魔觸發機率<br>─────────<br>閾值 LCK≥10：閃電命中必定觸發<br>閾值 LCK≥20：爆擊傷害×4</div>
+  </div>
+  <div class="sc chi" id="sc-chi" ontouchstart="toggleTip('sc-chi',true)" ontouchend="toggleTip('sc-chi',false)">
+    CHI <span id="tchi">0</span><span id="tchi-tmp" style="color:var(--teal);font-size:10px"></span>
+    <div class="tt">內力影響：<br>・格檔（傷害降至30%）機率<br>  → 即時顯示：格檔率 X%<br>・吸收傷害化為下回合蓄力機率<br>・回合結束時觸發當前HP 25%護盾<br>─────────<br>閾值 CHI≥10：格檔後自動反打10%ATK<br>閾值 CHI≥20：吸收傷害後雙倍奉還</div>
+  </div>
+  <div class="sc gold">金幣 <span id="tgold">0</span></div>
+  <div class="sc" id="trchip" style="display:none">配方 <span id="trtxt"></span></div>
+</div>
+
+<!-- TUTORIAL -->
+<div id="tutorial-overlay">
+  <div id="tutorial-modal">
+    <div class="tut-page active" id="tut-0">
+      <div class="tut-title">⚔ 背包冒險：主要玩法</div>
+      <div class="tut-body">
+        <b>目標：</b>帶著你的背包，打通20層地下城，擊敗最終BOSS。<br><br>
+        <b>流程：</b><br>
+        1. 在<b>家中倉庫</b>整理素材，裝備背包<br>
+        2. <b>出發探險</b>——選擇樓層節點前進<br>
+        3. 搜刮素材、擊殺怪物、累積金幣<br>
+        4. 通關或<b>撤離</b>把搜刮物帶回家<br><br>
+        <b>死亡懲罰：</b>背包內所有物品全數掉落遺失。<br>
+        <b>撤離：</b>戰鬥中可選擇撤離，安全帶回本次搜刮物。
+      </div>
+    </div>
+    <div class="tut-page" id="tut-1">
+      <div class="tut-title">🎒 背包與拼圖規則</div>
+      <div class="tut-body">
+        <b>配方觸發：</b>素材在背包中排成直排/橫排（或特定圖形），就會組成武器裝備。<br><br>
+        <span class="tag" style="background:#2a1a0a;color:#EF9F27;border:.5px solid #5a3a10">▤◈ = 短劍 ATK+5</span><br><br>
+        <b>進階：配方熟練度</b><br>
+        使用配方攻擊會累積次數。<b>達到一定次數</b>後解鎖加乘效應——例如木匕使用15次後，<b>接觸2格以上的其他武器 AGI×1.5</b>。<br><br>
+        <b>注意：</b>每種配方同一背包中只生效一次。設計藍圖需先習得才能觸發。
+      </div>
+    </div>
+    <div class="tut-page" id="tut-2">
+      <div class="tut-title">✦ 三種屬性與閾值</div>
+      <div class="tut-body">
+        <span class="tag pagi">AGI</span> 連擊、迴避、反擊<br>
+        <span class="tag plck">LCK</span> 爆擊、閃電命中、撿材料、武器附魔<br>
+        <span class="tag pchi">CHI</span> 格檔（即時顯示機率）、吸收蓄力、生命護盾<br><br>
+        <b>閾值突破：</b><br>
+        AGI≥10：連擊必至少2連 ／ AGI≥20：必至少4連<br>
+        LCK≥10：閃電命中必定觸發 ／ LCK≥20：爆擊傷害×4<br>
+        CHI≥10：格檔後自動反打 ／ CHI≥20：吸收後雙倍奉還
+      </div>
+    </div>
+    <div class="tut-nav">
+      <button id="tut-prev" onclick="tutPage(-1)" style="visibility:hidden">← 上一頁</button>
+      <div class="tut-dots" id="tut-dots"></div>
+      <button id="tut-next" class="btn-green" onclick="tutPage(1)">下一頁 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- PREP -->
+<div id="screen-prep" class="screen active">
+  <div id="prep-left">
+    <div class="panel">
+      <div class="prep-nav">
+        <button id="tab-storage" class="active-tab" onclick="showTab('storage')">倉庫</button>
+        <button id="tab-recipe" onclick="showTab('recipe')">設計圖</button>
+      </div>
+      <div id="tab-storage-content">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <div style="font-size:10px;color:var(--text3);letter-spacing:.1em;text-transform:uppercase">倉庫物品</div>
+          <button style="font-size:10px;padding:2px 8px;margin-left:auto" onclick="unloadBag()">一鍵卸下背包</button>
+        </div>
+        <div id="storage-grid"></div>
+        <div style="font-size:11px;color:var(--text3);margin-top:8px;line-height:1.6">點物品→點背包格子放入 ／ 雙擊→放入第一個空格 ／ 點背包格子兩次取回</div>
+      </div>
+      <div id="tab-recipe-content" style="display:none">
+        <div style="font-size:10px;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px">設計藍圖</div>
+        <div id="recipe-list-full"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="pl">出發背包</div>
+      <div id="prep-bag"></div>
+      <div id="place-bar">
+        <span class="place-recipe-name" id="place-recipe-name">—</span>
+        <span class="place-hint" id="place-hint">左鍵點空位放置，右鍵旋轉</span>
+        <button id="place-rotate-btn" onclick="placeRotate()">旋轉 ↻</button>
+        <button id="place-cancel-btn" onclick="placeCancel()">取消</button>
+      </div>
+    </div>
+  </div>
+  <div id="prep-right">
+    <div class="panel" id="infopanel">
+      <div class="pl">物品資訊</div>
+      <div style="color:var(--text3);font-size:12px">點選物品查看詳情</div>
+    </div>
+    <div class="panel">
+      <div class="pl">配方偵測</div>
+      <div id="recipe-list"></div>
+      <button id="cbb" onclick="toggleCB()" style="width:100%;margin-top:8px">設計圖速覽 ▸</button>
+      <div id="cbp"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:auto;flex-direction:column;">
+      <div style="display:flex;gap:6px">
+        <button class="btn-amber" style="flex:1;font-size:12px;padding:7px 0" onclick="SS('shop');renderShop()">商店</button>
+        <button class="btn-amber" style="flex:1;font-size:12px;padding:7px 0" onclick="SS('forge');renderForge()">大煉鋼</button>
+      </div>
+      <button class="btn-green" style="font-size:13px;padding:9px 0" onclick="startExpedition()">出發探險 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- SHOP -->
+<div id="screen-shop" class="screen">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+    <div style="font-size:18px;font-weight:500">商店</div>
+    <div style="font-size:14px;color:var(--gold);background:var(--gold-bg);border:.5px solid var(--gold-bd);border-radius:var(--rs);padding:4px 14px" id="shop-gold-display">💰 0</div>
+    <button style="margin-left:auto" onclick="SS('prep');renderPrepBag();renderStorage()">← 返回</button>
+  </div>
+  <div class="shop-cats" style="margin-bottom:8px">
+    <button class="shop-cat active" id="scat-material" onclick="setShopCat('material')">素材</button>
+    <button class="shop-cat" id="scat-special" onclick="setShopCat('special')">特殊</button>
+    <button class="shop-cat" id="scat-blueprint" onclick="setShopCat('blueprint')">藍圖</button>
+  </div>
+  <div class="shop-items" id="shop-items"></div>
+</div>
+
+<!-- FORGE -->
+<div id="screen-forge" class="screen">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+    <div style="font-size:18px;font-weight:500">🔥 全民大煉鋼</div>
+    <button style="margin-left:auto" onclick="SS('prep');renderStorage()">← 返回</button>
+  </div>
+  <div style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.6">選擇 3~10 個倉庫素材投入熔爐，融合成攜帶型寶石。探險中每次限帶一個，撤離後消失。</div>
+  <div class="panel">
+    <div class="pl">選擇素材</div>
+    <div id="forge-pool" class="forge-pool"></div>
+    <div style="font-size:10px;color:var(--text3);margin-top:4px;display:flex;gap:12px">
+      <span>已選：<span id="forge-count">0</span> 個</span>
+      <span>加總價值：<span id="forge-value">0</span></span>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="pl">預覽效果</div>
+    <div id="forge-preview"><div style="color:var(--text3);font-size:12px">選擇 3~10 個素材後預覽</div></div>
+  </div>
+  <div style="display:flex;gap:8px">
+    <button class="btn-green" id="forge-btn" style="flex:2;font-size:13px;padding:9px 0" onclick="doForge()" disabled>煉製寶石</button>
+    <button id="forge-reset-btn" style="flex:1;font-size:12px" onclick="resetForge()" disabled>重製（撤回）</button>
+  </div>
+</div>
+
+<!-- MAP -->
+<div id="screen-map" class="screen">
+  <div id="floor-header">
+    <div class="fh-floor" id="fh-floor">1F</div>
+    <div class="fh-info"><div class="fh-name" id="fh-name">—</div><div class="fh-sub" id="fh-sub"></div></div>
+    <div class="fh-tags" id="fh-tags"></div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
+      <button class="btn-amber" style="font-size:12px;padding:6px 14px" onclick="doRetreat()">撤離</button>
+    </div>
+  </div>
+  <div id="map-bag-wrap">
+    <div class="map-bag-hdr">
+      <div class="map-bag-title">背包（點格子調整擺位）</div>
+      <div class="map-stats">
+        <div class="ms agi">AGI <span id="mbagi">0</span></div>
+        <div class="ms lck">LCK <span id="mblck">0</span></div>
+        <div class="ms chi">CHI <span id="mbchi">0</span></div>
+      </div>
+    </div>
+    <div id="map-bag"></div>
+  </div>
+  <div id="node-select">
+    <div class="ns-title">選擇下一樓層</div>
+    <div class="ns-grid" id="ns-grid"></div>
+  </div>
+</div>
+
+<!-- BATTLE -->
+<div id="screen-battle" class="screen">
+  <div class="fr">
+    <div id="enemy-info-bar">
+      <div class="fr">
+        <span id="ben" style="font-weight:500;font-size:14px"></span>
+        <span id="bes" style="font-size:11px;color:var(--text2);margin-left:6px"></span>
+        <span class="sp2"></span>
+      </div>
+      <div id="enemy-forecast"></div>
+    </div>
+  </div>
+  <div class="cb2"><div class="cname" id="enbar"></div><div class="hw"><div class="hl"><span>HP</span><span id="ehp"></span></div><div class="ht"><div class="hf" id="ehf"></div></div></div><div class="ctags" id="etags"></div></div>
+  <div class="cb2">
+    <div class="cname">玩家</div>
+    <div class="hw">
+      <div class="hl"><span>HP</span><span id="php"></span><span id="shield-val" style="color:var(--shield-color);font-size:10px"></span></div>
+      <div class="ht"><div class="hf" id="phf"></div><div class="shield-bar" id="shield-bar" style="width:0"></div></div>
+    </div>
+    <div class="ctags" id="ptags"></div>
+  </div>
+  <div id="bsr">
+    <div class="bst">AGI <span class="bv agi" id="bsagi">0</span><span id="bsagix" class="bx2" style="display:none">×2</span><span id="thresh-agi"></span></div>
+    <div class="bst" style="margin-left:8px">LCK <span class="bv lck" id="bslck">0</span><span id="bslckx" class="bx2" style="display:none">×2</span><span id="thresh-lck"></span></div>
+    <div class="bst" style="margin-left:8px">CHI <span class="bv chi" id="bschi">0</span><span id="bschix" class="bx2" style="display:none">×2</span><span id="thresh-chi"></span><span id="parry-pct-display" style="font-size:10px;color:var(--purple);margin-left:4px"></span></div>
+    <span class="sp2"></span>
+    <div class="bst" style="font-size:11px;color:var(--text3)" id="chist"></div>
+  </div>
+  <div id="blw"><div id="bll"></div></div>
+  <div id="aa" style="position:relative"><div id="al">— 選擇行動 —</div><div id="ab"></div>
+  <!-- 消耗選格 overlay -->
+  <div id="consume-overlay">
+    <div class="consume-effect-hint" id="consume-hint-text">選擇要消耗的格子</div>
+    <div class="consume-bag-grid" id="consume-bag-grid"></div>
+    <button onclick="cancelConsume()" style="font-size:11px;padding:3px 12px;margin-top:4px;border-color:var(--border2)">取消</button>
+  </div>
+</div>
+</div>
+
+<!-- RESULT -->
+<div id="screen-result" class="screen">
+  <div class="result-card" id="result-card"></div>
+</div>
+
+<!-- SWAP -->
+<div id="swap-overlay">
+  <div id="swap-modal">
+    <div class="swap-title">背包已滿 — 替換物品</div>
+    <div class="swap-desc">點選左側背包格子（捨棄），再點右側新物品（保留），數量相等後確認。</div>
+    <div class="swap-cols">
+      <div><div class="swap-col-title">目前背包（點格子捨棄）</div><div id="swap-bag-grid"></div></div>
+      <div class="swap-mid">⇄</div>
+      <div><div class="swap-col-title">新物品（點選保留）</div><div class="swap-grid" id="swap-new-grid"></div></div>
+    </div>
+    <div class="swap-footer">
+      <div class="swap-hint" id="swap-hint">點選左側捨棄，右側保留。</div>
+      <button id="swap-confirm-btn" onclick="confirmSwap()" style="border-color:var(--green);color:var(--green)">確認替換</button>
+      <button id="swap-skip-btn" onclick="closeSwap()">放棄全部新物品</button>
+    </div>
+  </div>
+</div>
+
+<!-- BP -->
+<div id="bp-overlay">
+  <div id="bp-modal">
+    <div class="bp-reveal-title">✦ 習得新設計藍圖 ✦</div>
+    <div class="bp-reveal-name" id="bp-reveal-name"></div>
+    <div class="bp-reveal-grid" id="bp-reveal-grid"></div>
+    <div class="bp-reveal-pips" id="bp-reveal-pips"></div>
+    <div class="bp-reveal-effect" id="bp-reveal-effect"></div>
+    <button class="btn-green" style="width:100%" id="bp-ok-btn">記住了！</button>
+  </div>
+</div>
+
+<!-- 藍圖三選一 -->
+<div id="bp-choice-overlay">
+  <div id="bp-choice-modal">
+    <div class="bpc-title">✦ 選擇一個設計藍圖 ✦</div>
+    <div class="bpc-sub" id="bpc-sub">通過第 5 層里程碑，選擇一個新配方加入你的藍圖庫。</div>
+    <div class="bpc-cards" id="bpc-cards"></div>
+  </div>
+</div>
+
+<!-- STAT POPUP -->
+<div id="stat-popup">
+  <div id="stat-popup-inner">
+    <div id="stat-popup-text" style="font-size:15px;font-weight:500;margin-bottom:6px;color:var(--teal)"></div>
+    <div id="stat-popup-sub" style="font-size:12px;color:var(--text2)"></div>
+    <button class="btn-green" style="margin-top:14px;width:100%" onclick="closeStatPopup()">OK</button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   ITEMS
+   ============================================================ */
+const ITEMS={
+  rusty_sword:   {name:'生鏽匕首',icon:'🗡',rarity:'N',desc:'基礎刺擊武器。ATK +3。',atk:3,action:'stab'},
+  wood_dagger:   {name:'木匕首',  icon:'🔪',rarity:'N',desc:'木製短匕。ATK +3。',atk:3,action:'wood_stab'},
+  spike:         {name:'尖刺',   icon:'◈', rarity:'N',desc:'尖銳零件。可參與配方合成。',atk:1},
+  wood:          {name:'木材',   icon:'▤', rarity:'N',desc:'基礎素材。可參與配方合成。'},
+  battle_core:   {name:'戰鬥核心',icon:'⬡',rarity:'R',desc:'輔助件。觸發時為周圍物件 ATK +2。'},
+  piano_wire:    {name:'鋼琴線', icon:'〰',rarity:'R',desc:'輔助件。觸發時為鄰近物件連擊機率 +15%。'},
+  spell_matrix:  {name:'法術基質',icon:'☆',rarity:'R',desc:'法術的成立要件。可參與魔法配方合成。'},
+  iron_ore:      {name:'鐵礦石', icon:'◆', rarity:'R',desc:'堅硬素材。可強化配方。'},
+  gem:           {name:'寶石',   icon:'💎',rarity:'SP',desc:'大煉鋼產物。探險中帶入，撤離後消失。',isGem:true},
+  /* ── 新稀有掉落物 ── */
+  poison_blade:  {name:'淬毒之刃',icon:'🩸',rarity:'SR',desc:'使同配方攻擊附加流血2/回合。',isRareDrop:true,effect:'bleed_on_attack'},
+  power_core:    {name:'強化核心',icon:'⚙',rarity:'SR',desc:'使同列/排配方 ATK+3。',isRareDrop:true,effect:'row_atk_boost',atk:3},
+  lucky_charm:   {name:'幸運符', icon:'🍀',rarity:'SR',desc:'LCK+5，出戰消耗（每次探險一次性）。',isRareDrop:true,lck:5,consumeOnExpedition:true},
+  iron_shard:    {name:'鐵甲碎片',icon:'🔩',rarity:'SR',desc:'每回合護盾+5。',isRareDrop:true,effect:'shield_per_turn',shieldPerTurn:5},
+  witch_eye:     {name:'魔女之眼',icon:'👁',rarity:'SR',desc:'魔法攻擊20%機率石化敵人1回合。',isRareDrop:true,effect:'petrify_on_magic'},
+  dragon_tooth:  {name:'龍牙碎片',icon:'🦷',rarity:'SSR',desc:'相鄰武器連擊傷害60%→80%。',isRareDrop:true,effect:'combo_boost'},
+};
+const ITEM_VALUE={N:1,R:5,SR:15,SSR:30};
+function itemValue(key){return ITEM_VALUE[ITEMS[key]?.rarity]||1;}
+
+/* ============================================================
+   SHOP
+   ============================================================ */
+const SHOP_ITEMS={
+  material:[{key:'spike',price:8},{key:'wood',price:6},{key:'spell_matrix',price:30},{key:'iron_ore',price:40}],
+  special:[{key:'battle_core',price:55},{key:'piano_wire',price:50}],
+  blueprint:[],
+};
+let currentShopCat='material';
+
+/* ============================================================
+   RECIPES
+   ============================================================ */
+const RECIPES=[
+  {id:'sword_core',name:'劍芯',size:8,effect:'ATK +12，CHI+10，暴擊時追加劍芯傷害×50%',atk:12,agi:0,lck:0,chi:10,action:'slash_heavy',builtinCritBonus:true,
+   codebook:{cols:4,rows:2,cells:['◈','◈','◈','◈','▤','▤','▤','▤'],note:'4×2 橫排或 2×4 直排皆可'},
+   match(g,r,c,sz){
+     /* 橫向：4列2行 — 上排全spike下排全wood，或上wood下spike */
+     if(r+1<sz&&c+3<sz){
+       const top=[0,1,2,3].map(i=>r*sz+c+i),bot=[0,1,2,3].map(i=>(r+1)*sz+c+i);
+       const ok=(a,x)=>a.every(v=>v===x);
+       const t=top.map(i=>g[i]),b=bot.map(i=>g[i]);
+       if((ok(t,'spike')&&ok(b,'wood'))||(ok(t,'wood')&&ok(b,'spike')))return[...top,...bot];
+     }
+     /* 直向：2列4行 — 左排全spike右排全wood，或左wood右spike */
+     if(r+3<sz&&c+1<sz){
+       const left=[0,1,2,3].map(i=>(r+i)*sz+c),right=[0,1,2,3].map(i=>(r+i)*sz+c+1);
+       const ok=(a,x)=>a.every(v=>v===x);
+       const l=left.map(i=>g[i]),ri=right.map(i=>g[i]);
+       if((ok(l,'spike')&&ok(ri,'wood'))||(ok(l,'wood')&&ok(ri,'spike')))return[...left,...right];
+     }
+     return null;
+   }},
+  {id:'cross',name:'十字架',size:5,effect:'每回合自動回復15% HP，CHI+4，攻擊後額外回血5%',hp_regen_pct:.15,chi:4,builtinCrossRegen:true,
+   codebook:{cols:3,rows:3,cells:['_','◆','_','◆','◆','◆','_','◆','_'],note:'標準十字（5格）'},
+   match(g,r,c,sz){if(r<1||r>=sz-1||c<1||c>=sz-1)return null;const idxs=[r*sz+c,(r-1)*sz+c,(r+1)*sz+c,r*sz+c-1,r*sz+c+1];return idxs.every(i=>g[i]==='iron_ore')?idxs:null;}},
+  {id:'spear',name:'木茅',size:5,effect:'ATK +8，AGI+8，CHI+2，連擊傷害80%',atk:8,agi:8,lck:0,chi:2,action:'pierce_thrust',builtinComboFull:true,
+   codebook:{cols:5,rows:1,cells:['◈','◈','▤','▤','▤'],note:'5格直/橫排（前2尖刺後3木材）'},
+   match(g,r,c,sz){return TL(g,r,c,sz,5,['spike','spike','wood','wood','wood']);}},
+  {id:'iron_shield',name:'鐵盾',size:4,effect:'HP+25，CHI+6，解鎖防禦&彈反，防禦成功後CHI+4',chi:6,maxHpBonus:25,action_defend:'defend',action_parry:'parry',builtinShieldChi:true,
+   codebook:{cols:2,rows:2,cells:['◆','◆','◆','◆']},
+   match(g,r,c,sz){if(r+1>=sz||c+1>=sz)return null;const idxs=[r*sz+c,r*sz+c+1,(r+1)*sz+c,(r+1)*sz+c+1];return idxs.every(i=>g[i]==='iron_ore')?idxs:null;}},
+  {id:'wood_shield',name:'木盾',size:4,effect:'HP+10，CHI+3，解鎖防禦&彈反，防禦成功後CHI+4',chi:3,maxHpBonus:10,action_defend:'defend',action_parry:'parry',builtinShieldChi:true,
+   codebook:{cols:2,rows:2,cells:['▤','▤','▤','▤']},
+   match(g,r,c,sz){if(r+1>=sz||c+1>=sz)return null;const idxs=[r*sz+c,r*sz+c+1,(r+1)*sz+c,(r+1)*sz+c+1];return idxs.every(i=>g[i]==='wood')?idxs:null;}},
+  {id:'long_rod',name:'長桿',size:5,effect:'ATK +6，AGI+2，CHI+6，橫掃攻擊50%破甲（3回合）',atk:6,agi:2,lck:0,chi:6,action:'sweep',builtinPierce:true,
+   codebook:{cols:5,rows:1,cells:['▤','▤','▤','▤','▤']},
+   match(g,r,c,sz){return TL(g,r,c,sz,5,['wood','wood','wood','wood','wood']);}},
+  {id:'spellbook',name:'魔法書',size:4,effect:'ATK +10，LCK+12，每次使用後LCK臨時+3（最多3層）',atk:10,agi:0,lck:12,chi:0,action:'magic_bolt',builtinSpellLck:true,
+   codebook:{cols:2,rows:2,cells:['☆','☆','☆','☆']},
+   match(g,r,c,sz){if(r+1>=sz||c+1>=sz)return null;const idxs=[r*sz+c,r*sz+c+1,(r+1)*sz+c,(r+1)*sz+c+1];return idxs.every(i=>g[i]==='spell_matrix')?idxs:null;}},
+  {id:'these_three',name:'這三小',size:3,effect:'ATK +4，AGI+6，LCK+2，100%附加流血（2/回合）',atk:4,agi:6,lck:2,chi:0,action:'pierce_quick',builtinBleed:true,
+   codebook:{cols:3,rows:1,cells:['◈','▤','◈']},
+   match(g,r,c,sz){return TL(g,r,c,sz,3,['spike','wood','spike']);}},
+  {id:'hilt',name:'劍柄',size:3,effect:'ATK+4，AGI+4，LCK+4，CHI+2，相鄰武器ATK+5',atk:4,agi:4,lck:4,chi:2,builtinHiltBonus:true,
+   codebook:{cols:2,rows:2,cells:['▤','▤','_','▤'],note:'4方向L形皆可'},
+   match(g,r,c,sz){const Ls=[[{r,c},{r,c:c+1},{r:r+1,c:c+1}],[{r,c},{r,c:c+1},{r:r+1,c}],[{r:r+1,c},{r:r+1,c:c+1},{r,c:c+1}],[{r:r+1,c},{r:r+1,c:c+1},{r,c}]];for(const sh of Ls){if(sh.some(p=>p.r>=sz||p.c>=sz||p.r<0||p.c<0))continue;const idxs=sh.map(p=>p.r*sz+p.c);if(idxs.every(i=>g[i]==='wood'))return idxs;}return null;}},
+  {id:'wood_dagger_r',name:'木匕',size:2,effect:'ATK +3，AGI+1，LCK+1，相鄰武器AGI×1.5',atk:3,agi:1,lck:1,chi:0,action:'wood_stab_r',builtinAgiMult:true,
+   codebook:{cols:2,rows:1,cells:['▤','▤']},
+   match(g,r,c,sz){return TL(g,r,c,sz,2,['wood','wood']);}},
+  {id:'short_sword',name:'短劍',size:2,effect:'ATK +5，AGI+2，LCK+7，CHI+1',atk:5,agi:2,lck:7,chi:1,action:'slash',
+   codebook:{cols:2,rows:1,cells:['▤','◈']},
+   match(g,r,c,sz){return TL(g,r,c,sz,2,['wood','spike']);}},
+  {id:'bone_spear',name:'骨矛',size:3,effect:'ATK +7，50%破甲（3回合）',atk:7,agi:0,lck:0,chi:0,action:'bone_thrust',builtinPierceRate:.50,
+   codebook:{cols:3,rows:1,cells:['◈','◈','◈'],note:'3格直/橫排（皆為尖刺）'},
+   match(g,r,c,sz){return TL(g,r,c,sz,3,['spike','spike','spike']);}},
+  {id:'iron_dagger',name:'鐵匕首',size:2,effect:'ATK +8，AGI+6',atk:8,agi:6,lck:0,chi:0,action:'iron_stab',
+   codebook:{cols:2,rows:1,cells:['◆','▤']},
+   match(g,r,c,sz){return TL(g,r,c,sz,2,['iron_ore','wood']);}},
+  {id:'magic_crystal_core',name:'魔晶核',size:3,effect:'ATK +6，LCK+8，25%靈魂震盪（無視護盾&降敵命中）',atk:6,agi:0,lck:8,chi:0,action:'soul_shock',builtinSoulShockRate:.25,
+   codebook:{cols:3,rows:1,cells:['☆','◈','☆'],note:'3格直/橫排'},
+   match(g,r,c,sz){return TL(g,r,c,sz,3,['spell_matrix','spike','spell_matrix']);}},
+  {id:'spike_bush',name:'尖刺叢',size:2,effect:'被攻擊時反傷6',atk:0,agi:0,lck:0,chi:0,builtinThornDmg:6,
+   codebook:{cols:2,rows:1,cells:['◈','◈'],note:'2格直/橫排'},
+   match(g,r,c,sz){return TL(g,r,c,sz,2,['spike','spike']);}},
+  {id:'iron_ring',name:'鐵環',size:4,effect:'CHI+8，HP+15，每回合護盾+10',atk:0,agi:0,lck:0,chi:8,maxHpBonus:15,builtinShieldRegen:10,
+   codebook:{cols:4,rows:1,cells:['◆','◆','◆','◆'],note:'4格直/橫排'},
+   match(g,r,c,sz){return TL(g,r,c,sz,4,['iron_ore','iron_ore','iron_ore','iron_ore']);}},
+];
+const DEFAULT_BLUEPRINTS=['short_sword','these_three','wood_shield','wood_dagger_r'];
+const ADVANCED_BLUEPRINTS=['spear']; /* 需要大背包才有意義，不進普通藍圖池 */
+const PASSIVE_ITEMS=['battle_core','piano_wire'];
+function isPassive(key){return PASSIVE_ITEMS.includes(key);}
+
+/* ============================================================
+   FORGE TRAITS
+   ============================================================ */
+const FORGE_TRAITS=[
+  {id:'weapon_backfire',name:'怪物的失誤',desc:'怪物攻擊時有5%機率插到自己眼睛（-20HP，3回合命中率-10%）',minTier:2},
+  {id:'lifesteal',name:'鮮血奉獻',desc:'每次造成傷害，回復傷害量的10%',minTier:2},
+  {id:'agi_boost',name:'風之祝福',desc:'AGI獲得1.5倍增長',minTier:2},
+  {id:'lck_boost',name:'幸運之眼',desc:'LCK獲得1.5倍增長',minTier:2},
+  {id:'chi_boost',name:'龍之精氣',desc:'CHI獲得1.5倍增長',minTier:2},
+  {id:'bp_bonus',name:'知識的渴求',desc:'增加（AGI+LCK+CHI）% 的設計圖掉落機率',minTier:3},
+];
+const GEM_PREFIXES=['可靠的','神秘的','古老的','閃爍的','沉默的','憤怒的','純淨的','腐朽的','燃燒的','冰封的'];
+
+function calcForgeTier(val){if(val>=35)return 4;if(val>=20)return 3;if(val>=10)return 2;return 1;}
+function calcForgeStats(val){
+  const tier=calcForgeTier(val);
+  const statTable={1:[1,3],2:[5,8],3:[8,15],4:[15,25]};
+  const[lo,hi]=statTable[tier];const stat=lo+Math.floor(Math.random()*(hi-lo+1));
+  const attr=['agi','lck','chi'][Math.floor(Math.random()*3)];
+  const eligible=FORGE_TRAITS.filter(t=>t.minTier<=tier);
+  let trait=null;
+  if(tier>=2&&eligible.length>0&&(tier>=3||Math.random()<.5))
+    trait=eligible[Math.floor(Math.random()*eligible.length)];
+  const prefix=GEM_PREFIXES[Math.floor(Math.random()*GEM_PREFIXES.length)];
+  return{tier,stat,attr,trait,prefix};
+}
+let forgeSelected=[],forgePreview=null;
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+function TL(grid,r,c,sz,len,needed){
+  const s=[...needed].sort();
+  if(c+len<=sz){const idxs=Array.from({length:len},(_,i)=>r*sz+c+i);if(JSON.stringify(idxs.map(i=>grid[i]).sort())===JSON.stringify(s))return idxs;}
+  if(r+len<=sz){const idxs=Array.from({length:len},(_,i)=>(r+i)*sz+c);if(JSON.stringify(idxs.map(i=>grid[i]).sort())===JSON.stringify(s))return idxs;}
+  return null;
+}
+function DAknown(grid,sz,blueprints){
+  const sorted=[...RECIPES].filter(r=>blueprints.includes(r.id)).sort((a,b)=>b.size-a.size);
+  const used=new Set(),active=[],seenIds=new Set();
+  outer:for(const rec of sorted){
+    if(seenIds.has(rec.id))continue;
+    for(let r=0;r<sz;r++)for(let c=0;c<sz;c++){
+      const idxs=rec.match(grid,r,c,sz);
+      if(!idxs||idxs.some(i=>used.has(i)))continue;
+      idxs.forEach(i=>used.add(i));active.push({recipe:rec,idxs});seenIds.add(rec.id);continue outer;
+    }
+  }
+  return{active,used};
+}
+
+/* 計算兩個配方之間的接觸格數 */
+function countContact(idxsA,idxsB,sz){
+  let cnt=0;
+  for(const a of idxsA){for(const b of idxsB){const dr=Math.abs(Math.floor(a/sz)-Math.floor(b/sz));const dc=Math.abs(a%sz-b%sz);if(dr+dc===1)cnt++;}}
+  return cnt;
+}
+
+/* ============================================================
+   MASTERY
+   ============================================================ */
+/* ============================================================
+   BUILTIN BONUSES（取代熟練度，直接從配方 builtin 旗標讀取）
+   ============================================================ */
+function getActiveBonus(recipeId){
+  const rec=RECIPES.find(r=>r.id===recipeId);
+  if(!rec)return{};
+  const b={};
+  if(rec.builtinCritBonus)b.swordCoreOnCrit=true;
+  if(rec.builtinCrossRegen)b.crossRegen=true;
+  if(rec.builtinComboFull)b.comboFullDmg=true;
+  if(rec.builtinPierce)b.longRodPierce=true;
+  if(rec.builtinPierceRate)b.bonePiercePct=rec.builtinPierceRate;
+  if(rec.builtinSoulShockRate)b.soulShockPct=rec.builtinSoulShockRate;
+  if(rec.builtinSpellLck)b.spellbookLck=true;
+  if(rec.builtinBleed)b.addBleed=true;
+  if(rec.builtinShieldChi)b.shieldChi=true;
+  /* 劍柄：檢查相鄰武器，給ATK+5 */
+  if(rec.builtinHiltBonus){
+    const{active}=DAknown(G.bag,G.bagSize,G.blueprints);
+    const hiltRec=active.find(a=>a.recipe.id==='hilt');
+    const weaponRecs=active.filter(a=>a.recipe.action&&a.recipe.id!=='hilt');
+    if(hiltRec&&weaponRecs.some(w=>countContact(hiltRec.idxs,w.idxs,G.bagSize)>=1))b.atk=5;
+  }
+  /* 木匕：相鄰武器AGI×1.5 */
+  if(rec.builtinAgiMult){
+    const{active}=DAknown(G.bag,G.bagSize,G.blueprints);
+    const dagRec=active.find(a=>a.recipe.id==='wood_dagger_r');
+    const weaponRecs=active.filter(a=>a.recipe.action&&a.recipe.id!=='wood_dagger_r');
+    if(dagRec&&weaponRecs.some(w=>countContact(dagRec.idxs,w.idxs,G.bagSize)>=1))b.agiMult=1.5;
+  }
+  return b;
+}
+
+/* ============================================================
+   STATS
+   ============================================================ */
+const SK={combo:.040,dodge:.025,counter:.020,crit:.035,lightning:.012,findMat:.010,enchant:.008,parry:.030,absorb:.020};
+const COMBO_MAX=16,COMBO_DECAY=.55;
+function prob(v,k){return 1-1/(1+v*k);}
+function roll(v,k){return Math.random()<prob(v,k);}
+function normalRand(){let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+
+const ENCHANTS=[
+  {id:'atk50',label:'ATK×1.5',apply(st,i){st.enchants[i]={type:'atk50'};}},
+  {id:'agi8', label:'AGI+8',  apply(st,i){st.enchants[i]={type:'agi8'};}},
+  {id:'lck10',label:'LCK+10', apply(st,i){st.enchants[i]={type:'lck10'};}},
+  {id:'double_hit',label:'必定2連擊',apply(st,i){st.enchants[i]={type:'double_hit'};}},
+];
+
+/* ============================================================
+   GOLD
+   ============================================================ */
+const STAR_GOLD_BASE={1:5,2:12,3:22,4:40,5:80};
+function rollGold(star){const base=STAR_GOLD_BASE[star]||5;const n=normalRand();return Math.max(1,Math.round(base*(1+Math.max(-.5,Math.min(.5,n*.25)))));}
+
+/* ============================================================
+   ENEMIES
+   ============================================================ */
+const ENEMIES={
+  country_mouse:{name:'鄉下老鼠',star:1,maxHp:39,atk:1,def:0,stunnable:true,
+    drops:['wood'],rareDrop:{key:'lucky_charm',rate:.03},isRat:true,
+    attacks:[{name:'咬',dmg:3,effect:'',weight:1}],
+    forecast:()=>'老鼠準備「咬」（輕攻擊）'},
+  goblin:{name:'哥布林',star:1,maxHp:75,atk:5,def:0,stunnable:true,
+    drops:['spike','wood'],rareDrop:{key:'poison_blade',rate:.05},rareDropAlt:{key:'lucky_charm',rate:.03},
+    attacks:[{name:'亂抓',dmg:8,effect:'',weight:2},{name:'咬一口',dmg:6,effect:'bleed1',weight:1}],
+    forecast:st=>`哥布林準備「${st.nextAttack.name}」（${['','輕攻擊','中攻擊','重攻擊'][st.nextAttack.weight]}）`},
+  skeleton:{name:'骷髏劍士',star:2,maxHp:132,atk:8,def:2,stunnable:false,
+    drops:['rusty_sword','spike'],
+    attacks:[{name:'劍斬',dmg:14,effect:'',weight:2},{name:'盾撞',dmg:11,effect:'stun1',weight:1}],
+    forecast:st=>`骷髏準備「${st.nextAttack.name}」（${['','輕攻擊','中攻擊','重攻擊'][st.nextAttack.weight]}）${st.nextAttack.effect==='stun1'?'⚠擊暈！':''}`},
+  forest_wolf:{name:'森林狼',star:2,maxHp:114,atk:11,def:1,stunnable:true,
+    drops:['piano_wire'],
+    attacks:[{name:'撲咬',dmg:17,effect:'',weight:3},{name:'連爪',dmg:11,effect:'double',weight:2}],
+    forecast:st=>`狼蓄力「${st.nextAttack.name}」（${['','輕攻擊','中攻擊','重攻擊'][st.nextAttack.weight]}）${st.nextAttack.effect==='double'?'（兩次！）':''}`},
+  troll:{name:'食人魔',star:3,maxHp:207,atk:13,def:3,stunnable:true,
+    drops:['iron_ore','battle_core'],rareDrop:{key:'power_core',rate:.05},
+    attacks:[{name:'重拳',dmg:21,effect:'',weight:3},{name:'橫掃臂',dmg:15,effect:'stun1',weight:2},{name:'咆哮',dmg:0,effect:'rage',weight:1}],
+    forecast:st=>`食人魔準備「${st.nextAttack.name}」（${['','輕/增益','中攻擊','重攻擊'][st.nextAttack.weight]}）${st.nextAttack.effect==='rage'?'⚠下回合暴漲！':''}`},
+  iron_golem:{name:'鐵甲傀儡',star:3,maxHp:225,atk:12,def:6,stunnable:false,
+    drops:['iron_ore'],rareDrop:{key:'iron_shard',rate:.05},
+    attacks:[{name:'鐵拳',dmg:18,effect:'',weight:2},{name:'踏地',dmg:12,effect:'stun1',weight:1},{name:'強化',dmg:0,effect:'rage',weight:1}],
+    forecast:st=>`傀儡準備「${st.nextAttack.name}」（${['','輕/增益','中攻擊','重攻擊'][st.nextAttack.weight]}）${st.nextAttack.effect==='rage'?'⚠ATK↑！':''}`},
+  harpy:{name:'鷹身女妖',star:3,maxHp:150,atk:14,def:1,stunnable:true,
+    drops:['piano_wire','spell_matrix'],rareDrop:{key:'witch_eye',rate:.05},
+    attacks:[{name:'俯衝抓',dmg:21,effect:'',weight:3},{name:'尖嘯',dmg:9,effect:'poison2',weight:1},{name:'連啄',dmg:14,effect:'double',weight:2}],
+    forecast:st=>`妖準備「${st.nextAttack.name}」（${['','輕攻擊','中攻擊','重攻擊'][st.nextAttack.weight]}）${st.nextAttack.effect==='poison2'?'⚠毒！':''}`},
+  king_slime:{name:'國王史萊姆',star:4,maxHp:2500,atk:9,def:0,stunnable:false,isElite:true,specialMechanic:'poison_stack',
+    drops:['spell_matrix','iron_ore','piano_wire'],rareDrop:{key:'dragon_tooth',rate:.10,firstKillGuaranteed:true},
+    attacks:[{name:'黏液衝撞',dmg:100,effect:'',weight:2},{name:'毒液噴射',dmg:70,effect:'poison2',weight:2},{name:'分裂！',dmg:0,effect:'split_heal',weight:1}],
+    forecast:st=>`史萊姆準備「${st.nextAttack.name}」${st.nextAttack.effect==='poison2'?'⚠毒+2！':st.nextAttack.effect==='split_heal'?'⚠分裂回血！':''}`},
+  shreck:{name:'屎瑞克',star:5,maxHp:1500,atk:20,def:5,stunnable:false,isBoss:true,
+    drops:['iron_ore','spell_matrix','battle_core'],
+    attacks:[{name:'沼澤重拳',dmg:200,effect:'',weight:3},{name:'屎臭衝擊',dmg:250,effect:'stun1',weight:3},{name:'狂怒連擊',dmg:150,effect:'double',weight:2},{name:'沼澤詛咒',dmg:70,effect:'poison3',weight:2}],
+    forecast:st=>`屎瑞克發動「${st.nextAttack.name}」（${['','輕攻擊','中攻擊','重攻擊'][st.nextAttack.weight]}）${st.nextAttack.weight>=3?'⚠高傷！':''}`},
+};
+
+/* ============================================================
+   MAP GEN
+   ============================================================ */
+const STAR_POOL={1:['goblin'],2:['skeleton','forest_wolf'],3:['troll','iron_golem','harpy'],4:['troll','iron_golem'],5:['iron_golem']};
+function rndByStar(s){const p=STAR_POOL[s]||['goblin'];return p[Math.floor(Math.random()*p.length)];}
+function rollStar(f){const r=Math.random();if(f<=4)return r<.8?1:2;if(f<=8)return r<.5?1:r<.85?2:3;if(f<=12)return r<.2?2:r<.7?3:4;if(f<=16)return r<.3?3:r<.8?4:5;return r<.2?4:5;}
+function rollNodeType(f){
+  if(f===10)return{type:'elite',star:4,enemyKey:'king_slime'};
+  if(f===20)return{type:'boss',star:5,enemyKey:'shreck'};
+  const r=Math.random();
+  /* 移除search，改為rat節點 */
+  if(f<=9){if(r<.20)return{type:'rat',enemyKey:'country_mouse',star:0};if(r<.30)return{type:'chest',quality:Math.ceil(f/5)};if(r<.40)return{type:'slot'};const s=rollStar(f);return{type:'battle',star:s,enemyKey:rndByStar(s)};}
+  if(r<.10)return{type:'chest',quality:3};if(r<.20)return{type:'slot'};const s=rollStar(f);return{type:'battle',star:s,enemyKey:rndByStar(s)};
+}
+function genFloorChoices(f){
+  if(f===10)return[{type:'elite',star:4,enemyKey:'king_slime'}];
+  if(f===20)return[{type:'boss',star:5,enemyKey:'shreck'}];
+  const nodes=[];for(let i=0;i<3;i++)nodes.push(rollNodeType(f));
+  if(!nodes.some(n=>n.type==='battle'||n.type==='rat')){const s=rollStar(f);nodes[0]={type:'battle',star:s,enemyKey:rndByStar(s)};}
+  return nodes;
+}
+
+/* ============================================================
+   ACTIONS
+   ============================================================ */
+const PARRY_CHANCE={1:.90,2:.40,3:.25};
+
+const ACTIONS={
+  stab:{label:'匕首刺擊',type:'slash',execute(st,rid){return doAtk(st,3+(ITEMS.rusty_sword.atk||0),'匕首刺擊',getBS(st,rid),rid);}},
+  wood_stab:{label:'木匕刺擊',type:'slash',execute(st,rid){return doAtk(st,3+(ITEMS.wood_dagger.atk||0),'木匕刺擊',getBS(st,rid),rid);}},
+  slash:{label:'短劍斬擊',type:'slash',execute(st,rid){return doAtk(st,calcRecipeATK('short_sword'),'短劍斬擊',getBS(st,rid),rid);}},
+  wood_stab_r:{label:'木匕突刺',type:'slash',execute(st,rid){return doAtk(st,calcRecipeATK('wood_dagger_r'),'木匕突刺',getBS(st,rid),rid);}},
+  slash_heavy:{label:'重斬 (劍芯)',type:'slash',execute(st,rid){return doAtk(st,Math.round(calcRecipeATK('sword_core')*1.5),'重力斬擊',getBS(st,rid),rid);}},
+  pierce_thrust:{label:'突刺 (木茅)',type:'pierce',execute(st,rid){return doAtk(st,calcRecipeATK('spear'),'木茅突刺',getBS(st,rid),rid);}},
+  pierce_quick:{label:'快刺 (這三小)',type:'pierce',execute(st,rid){return doAtk(st,calcRecipeATK('these_three'),'快速刺擊',getBS(st,rid),rid);}},
+  sweep:{label:'橫掃 (長桿)',type:'slash',execute(st,rid){
+    const logs=doAtk(st,Math.round(calcRecipeATK('long_rod')*.8),'長桿橫掃',getBS(st,rid),rid);
+    if(st.enemy.stunnable&&Math.random()<.3){st.enemy.stun=1;logs.push({c:'lr',t:'敵人被橫掃擊暈！'});}
+    return logs;
+  }},
+  magic_bolt:{label:'魔法彈 (魔法書)',type:'magic',execute(st,rid){
+    const logs=doAtk(st,calcRecipeATK('spellbook'),'魔法彈射出',getBS(st,rid),rid);
+    /* 魔法書 builtin：每次使用LCK+3，最多3層 */
+    const rec=RECIPES.find(r=>r.id==='spellbook');
+    if(rec?.builtinSpellLck&&G.tmpStats.lckMagic<3){G.tmpStats.lckMagic++;G.tmpStats.lck+=3;logs.push({c:'ltmp',t:`魔法書：LCK 臨時 +3（已疊 ${G.tmpStats.lckMagic}/3 層）`});}
+    return logs;
+  }},
+  defend:{label:'防禦（盾牌）',type:'defend',execute(st){
+    const pct=.70+Math.random()*.25;st.player.defending=true;st.player.defendPct=pct;
+    return[{c:'ldefend',t:`擺出防禦姿勢！本回合傷害減免 ${Math.round(pct*100)}%。`}];
+  }},
+  parry:{label:'彈反（需知出招）',type:'parry',execute(st){
+    const w=st.nextAttack?.weight||2;const ch=PARRY_CHANCE[w]||.40;
+    if(Math.random()<ch){
+      const cd=Math.max(1,Math.round(calcATKAll(st)*(.85+Math.random()*.3)));
+      st.enemy.hp=Math.max(0,st.enemy.hp-cd);st.player.parried=true;
+      return[{c:'lparry',t:`彈反成功！（機率 ${Math.round(ch*100)}%）完全抵消攻擊，反打 ${cd} 傷害！`}];
+    }
+    st.player.parried=false;
+    return[{c:'lm',t:`彈反失敗！（機率 ${Math.round(ch*100)}%）`}];
+  }},
+  flee:{label:'撤離',type:'flee',execute(st){st.battleResult='fled';return[{c:'lr',t:'選擇撤離！帶走搜刮到的物品返回基地。'}];}},
+  bone_thrust:{label:'骨矛突刺',type:'pierce',execute(st,rid){
+    const logs=doAtk(st,calcRecipeATK('bone_spear'),'骨矛突刺',getBS(st,rid),rid);
+    const rec=RECIPES.find(r=>r.id==='bone_spear');
+    const pct=rec?.builtinPierceRate||.30;
+    if(Math.random()<pct){st.enemy.armorBreak=3;logs.push({c:'lr',t:`破甲！（${Math.round(pct*100)}%觸發，3回合受傷+20%）`});}
+    return logs;
+  }},
+  iron_stab:{label:'鐵匕突刺',type:'slash',execute(st,rid){return doAtk(st,calcRecipeATK('iron_dagger'),'鐵匕突刺',getBS(st,rid),rid);}},
+  soul_shock:{label:'靈魂震盪',type:'magic',execute(st,rid){
+    const logs=doAtk(st,calcRecipeATK('magic_crystal_core'),'靈魂震盪',getBS(st,rid),rid);
+    const rec=RECIPES.find(r=>r.id==='magic_crystal_core');
+    const pct=rec?.builtinSoulShockRate||.10;
+    if(Math.random()<pct){st.enemy.hitMalus=(st.enemy.hitMalus||0)+99;logs.push({c:'len',t:`靈魂震盪！敵方命中大幅下降（1回合）！`});}
+    return logs;
+  }},
+};
+function rmBag(st,key){const i=st.bag.indexOf(key);if(i!==-1)st.bag[i]=null;}
+
+/* ============================================================
+   消耗系統
+   每種素材消耗後的固定效果（永久移除格子）
+   ============================================================ */
+const CONSUME_EFFECTS={
+  spike:{
+    label:'拋擲尖刺',icon:'◈',
+    hint:'造成固定穿透傷害（無視防禦），不受ATK影響。',
+    execute(){
+      const dmg=12+Math.floor(Math.random()*8); /* 12~19 穿透傷 */
+      G.enemy.hp=Math.max(0,G.enemy.hp-dmg);
+      aLog('lr',`🗺 消耗尖刺！穿透攻擊 ${dmg} 傷害（無視防禦）！`);
+      if(G.enemy.hp<=0)endBattle('win');
+    }
+  },
+  wood:{
+    label:'搭建盾牆',icon:'▤',
+    hint:'立刻獲得護盾（等同當前HP的30%）。',
+    execute(){
+      const sh=Math.round(G.player.hp*.30);
+      G.player.shield=(G.player.shield||0)+sh;
+      aLog('lshield',`🗺 消耗木材！搭建臨時護盾 +${sh}（現在：${G.player.shield}）`);
+      updHP();
+    }
+  },
+  iron_ore:{
+    label:'鐵錠重擊',icon:'◆',
+    hint:'對敵人造成高傷害並施加破甲3回合。',
+    execute(){
+      const dmg=20+Math.floor(Math.random()*12); /* 20~31 */
+      G.enemy.hp=Math.max(0,G.enemy.hp-dmg);
+      G.enemy.armorBreak=3;
+      aLog('lr',`🗺 消耗鐵礦！鐵錠重擊 ${dmg} 傷害＋破甲3回合！`);
+      if(G.enemy.hp<=0)endBattle('win');
+    }
+  },
+  spell_matrix:{
+    label:'魔力爆發',icon:'☆',
+    hint:'本回合LCK暴增30，觸發一次閃電（下回合失效）。',
+    execute(){
+      G.tmpStats.lck=(G.tmpStats.lck||0)+30;
+      const center=(calcRS(G).lck)*2;
+      const bolt=Math.max(5,Math.round(center*(0.85+Math.random()*.3)));
+      G.enemy.hp=Math.max(0,G.enemy.hp-bolt);
+      aLog('ll2',`🗺 消耗法術基質！魔力爆發 ⚡ ${bolt} 傷害，LCK 暫時 +30！`);
+      G.tmpStats.lck-=30; /* 立刻還原，只影響本次閃電 */
+      if(G.enemy.hp<=0)endBattle('win');
+    }
+  },
+  battle_core:{
+    label:'核心超載',icon:'⬡',
+    hint:'本回合ATK翻倍，下一次攻擊傷害×2。',
+    execute(){
+      G._consumeCoreActive=true;
+      aLog('lc',`🗺 消耗戰鬥核心！超載啟動，下一次攻擊傷害 ×2！`);
+    }
+  },
+  piano_wire:{
+    label:'絆線陷阱',icon:'〰',
+    hint:'使敵人擊暈1回合。',
+    execute(){
+      G.enemy.stun=1;
+      aLog('lr',`🗺 消耗鋼琴線！絆線陷阱，${ENEMIES[G.enemy.key].name} 擊暈1回合！`);
+    }
+  },
+  rusty_sword:{
+    label:'投擲匕首',icon:'🗡',
+    hint:'造成中等傷害並使敵人流血2/回合。',
+    execute(){
+      const dmg=8+Math.floor(Math.random()*6);
+      G.enemy.hp=Math.max(0,G.enemy.hp-dmg);
+      G.enemy.bleed=(G.enemy.bleed||0)+2;
+      aLog('lr',`🗺 消耗生鏽匕首！投擲 ${dmg} 傷害＋流血 +2！`);
+      if(G.enemy.hp<=0)endBattle('win');
+    }
+  },
+  wood_dagger:{
+    label:'投擲木匕首',icon:'🔪',
+    hint:'造成中等傷害，AGI臨時+5（本場有效）。',
+    execute(){
+      const dmg=7+Math.floor(Math.random()*5);
+      G.enemy.hp=Math.max(0,G.enemy.hp-dmg);
+      G.tmpStats.agi=(G.tmpStats.agi||0)+5;
+      aLog('lr',`🗺 消耗木匕首！投擲 ${dmg} 傷害＋AGI 臨時 +5！`);
+      if(G.enemy.hp<=0)endBattle('win');
+    }
+  },
+};
+
+let _consumeMode=false;
+function openConsumeMode(){
+  if(G.battleResult)return;
+  _consumeMode=true;
+  renderConsumeBag();
+  document.getElementById('consume-overlay').classList.add('show');
+}
+function cancelConsume(){
+  _consumeMode=false;
+  document.getElementById('consume-overlay').classList.remove('show');
+}
+function renderConsumeBag(){
+  const sz=G.bagSize,g=document.getElementById('consume-bag-grid');
+  g.style.gridTemplateColumns=`repeat(${sz},48px)`;
+  g.innerHTML='';
+  G.bag.forEach((item,i)=>{
+    const cell=document.createElement('div');
+    const effect=item?CONSUME_EFFECTS[item]:null;
+    cell.className='consume-cell '+(item&&effect?'has-item':'empty');
+    if(item){
+      const d=ITEMS[item];
+      cell.innerHTML=`<div class="consume-cell-icon">${d.icon}</div><div class="consume-cell-name">${d.name}</div>`;
+      if(effect){
+        cell.title=effect.hint;
+        cell.onclick=()=>doConsume(i,item);
+      }
+    }
+    g.appendChild(cell);
+  });
+  /* 更新提示文字 */
+  const hint=document.getElementById('consume-hint-text');
+  hint.textContent='點選格子消耗物品（永久移除）→ 立即觸發效果';
+}
+function doConsume(idx,itemKey){
+  const effect=CONSUME_EFFECTS[itemKey];
+  if(!effect||G.battleResult)return;
+  /* 永久移除格子 */
+  G.bag[idx]=null;
+  /* 關閉 overlay */
+  cancelConsume();
+  /* 回合推進 */
+  G.battleTurn++;
+  aLog('s',`── 回合 ${G.battleTurn} ──`);
+  aLog('s',`【消耗】${effect.label}`);
+  /* 執行效果 */
+  effect.execute();
+  if(G.battleResult)return;
+  /* 敵方回合 */
+  setTimeout(()=>{
+    enemyTurn();
+    if(!G.battleResult){renderActs();updHP();renderMapBag();}
+  },450);
+}
+
+
+function calcRecipeATK(recipeId){
+  let b=3;const{active}=DAknown(G.bag,G.bagSize,G.blueprints);
+  const found=active.find(a=>a.recipe.id===recipeId);
+  if(found){if(found.recipe.atk)b+=found.recipe.atk;found.idxs.forEach(i=>{const k=G.bag[i];if(k&&ITEMS[k]?.atk)b+=ITEMS[k].atk;});}
+  return b;
+}
+function calcATKAll(st){
+  let b=3;
+  st.bag.forEach((key,i)=>{if(!key)return;const item=ITEMS[key];if(!item||!item.atk)return;let a=item.atk;if(st.enchants?.[i]?.type==='atk50')a=Math.round(a*1.5);b+=a;});
+  const{active}=DAknown(st.bag,st.bagSize,G.blueprints);active.forEach(({recipe:r})=>{if(r.atk)b+=r.atk;});
+  return b;
+}
+function calcMaxHpBonus(){const{active}=DAknown(G.bag,G.bagSize,G.blueprints);let b=0;active.forEach(({recipe:r})=>{b+=r.maxHpBonus||0;});return b;}
+function calcHpRegenPct(){const{active}=DAknown(G.bag,G.bagSize,G.blueprints);let p=0;active.forEach(({recipe:r})=>{p+=r.hp_regen_pct||0;});return p;}
+
+function calcRS(st){
+  const{active}=DAknown(st.bag,st.bagSize,G.blueprints);
+  let agi=0,lck=0,chi=0;
+  active.forEach(({recipe:r})=>{agi+=r.agi||0;lck+=r.lck||0;chi+=r.chi||0;});
+  /* 木匕 builtinAgiMult：相鄰武器時AGI×1.5 */
+  const dagRec=active.find(a=>a.recipe.id==='wood_dagger_r');
+  if(dagRec){const weaponRecs=active.filter(a=>a.recipe.action&&a.recipe.id!=='wood_dagger_r');if(weaponRecs.some(w=>countContact(dagRec.idxs,w.idxs,st.bagSize)>=1))agi=Math.round(agi*1.5);}
+  Object.entries(st.enchants||{}).forEach(([,e])=>{if(e.type==='agi8')agi+=8;if(e.type==='lck10')lck+=10;});
+  /* 寶石 */
+  const gem=G.activeGem;
+  if(gem){
+    if(gem.attr==='agi')agi+=gem.stat;if(gem.attr==='lck')lck+=gem.stat;if(gem.attr==='chi')chi+=gem.stat;
+    if(gem.trait?.id==='agi_boost')agi=Math.round(agi*1.5);
+    if(gem.trait?.id==='lck_boost')lck=Math.round(lck*1.5);
+    if(gem.trait?.id==='chi_boost')chi=Math.round(chi*1.5);
+  }
+  /* 幸運符 */
+  if(st.bag.includes('lucky_charm')){lck+=5;}
+  /* 臨時 */
+  agi+=G.tmpStats.agi||0;lck+=G.tmpStats.lck||0;chi+=G.tmpStats.chi||0;
+  /* 武器附魔（本回合） */
+  if(G._enchantedRecipeId){const r=RECIPES.find(r=>r.id===G._enchantedRecipeId);if(r){agi+=r.agi||0;lck+=r.lck||0;chi+=r.chi||0;}}
+  return{agi,lck,chi};
+}
+function getBS(st,rid){
+  let{agi,lck,chi}=calcRS(st);let x2a=false,x2l=false,x2c=false;
+  if(rid){const r=RECIPES.find(r=>r.id===rid);if(r){agi+=r.agi||0;lck+=r.lck||0;chi+=r.chi||0;if(r.agi)x2a=true;if(r.lck)x2l=true;if(r.chi)x2c=true;}}
+  return{agi,lck,chi,x2a,x2l,x2c};
+}
+
+/* 撤離機率（戰鬥中） */
+function calcFleeChance(){
+  const fill=G.bag.filter(Boolean).length,cap=G.bagSize*G.bagSize;
+  return Math.round((0.95-(0.95-0.30)*(fill/cap))*100);
+}
+
+/* LCK素材稀有度 */
+function pickMatByLck(lck){
+  const r=Math.random();
+  let rar;
+  if(lck>=15){rar=r<.20?'N':r<.70?'R':'SR';}
+  else if(lck>=10){rar=r<.50?'N':r<.90?'R':'SR';}
+  else if(lck>=5){rar=r<.80?'N':'R';}
+  else rar='N';
+  const pools={N:['spike','wood'],R:['iron_ore','spell_matrix','piano_wire','battle_core'],SR:['iron_ore','spell_matrix']};
+  const pool=pools[rar];return pool[Math.floor(Math.random()*pool.length)];
+}
+
+/* ============================================================
+   CORE ATTACK
+   ============================================================ */
+function doAtk(st,baseAtk,actionName,stats,rid){
+  const{agi,lck,chi}=stats;const logs=[];let atk=baseAtk;
+  const b=rid?getActiveBonus(rid):{};
+  /* 劍柄 ATK加成 */
+  if(b.atk)atk+=b.atk;
+  /* CHI蓄力 */
+  if(st.chiStored>0){atk+=st.chiStored;logs.push({c:'lch',t:`內力爆發！附加 ${st.chiStored} 點傷害。`});st.chiStored=0;}
+  const def=st.enemy.def||0;
+  let raw=Math.max(1,Math.round((atk-def/2)*(.85+Math.random()*.3)));
+  /* 戰鬥核心超載：傷害×2，使用後清除 */
+  if(G._consumeCoreActive){raw*=2;G._consumeCoreActive=false;logs.push({c:'lc',t:'戰鬥核心超載！傷害 ×2！'});}
+  /* 破甲加乘 */
+  if(st.enemy.armorBreak>0)raw=Math.round(raw*1.2);
+  /* LCK爆擊 */
+  let critMult=lck>=40?4:2;
+  const encD=Object.values(st.enchants||{}).some(e=>e.type==='double_hit');
+  if(roll(lck,SK.crit)){raw*=critMult;logs.push({c:'lc',t:`爆擊！傷害×${critMult}！`});
+    /* 劍芯：暴擊時追加劍芯傷害×50% */
+    if(b.swordCoreOnCrit){const extra=Math.round(calcRecipeATK('sword_core')*.5);raw+=extra;logs.push({c:'lc',t:`劍芯爆發！暴擊追加 ${extra} 傷害！`});}}
+  logs.push({c:'lp',t:`${actionName}！造成 ${raw} 點傷害。`});
+  st.enemy.hp=Math.max(0,st.enemy.hp-raw);
+  /* 吸血 */
+  if(G.activeGem?.trait?.id==='lifesteal'){const h=Math.round(raw*.1);st.player.hp=Math.min(st.player.maxHp,st.player.hp+h);if(h>0)logs.push({c:'lheal',t:`鮮血奉獻：回復 ${h} HP。`});}
+  /* 十字架：攻擊後回血5% */
+  if(b.crossRegen){const h=Math.round(st.player.maxHp*.05);st.player.hp=Math.min(st.player.maxHp,st.player.hp+h);logs.push({c:'lheal',t:`十字架：攻擊後回血 ${h} HP。`});}
+  /* 這三小：100%附加流血 */
+  if(b.addBleed){st.enemy.bleed=(st.enemy.bleed||0)+2;logs.push({c:'lr',t:'這三小：附加流血 +2！'});}
+  /* 長桿：50%破甲 */
+  if(b.longRodPierce&&Math.random()<.50){st.enemy.armorBreak=3;logs.push({c:'lr',t:'長桿橫掃：施加破甲！（3回合受傷+20%）'});}
+  /* 遞推連擊 */
+  let cc=prob(agi,SK.combo);if(encD)cc=1;
+  /* AGI閾值 */
+  let minCombo=0;if(agi>=40)minCombo=4;else if(agi>=20)minCombo=2;
+  let count=0,forcedCombo=minCombo;
+  const comboDmgPct=b.comboFullDmg?1.0:(G.bag.includes('dragon_tooth')?.80:.60);
+  while(st.enemy.hp>0&&count<COMBO_MAX){
+    const forced=count<forcedCombo;
+    if(!forced&&Math.random()>=cc)break;
+    count++;const cd=Math.max(1,Math.round(raw*(comboDmgPct+Math.random()*.2)));
+    st.enemy.hp=Math.max(0,st.enemy.hp-cd);
+    logs.push({c:'lco',t:`連擊 ×${count}！追加 ${cd} 傷害。${forced?'（必定）':''}`});
+    if(G.activeGem?.trait?.id==='lifesteal'){const h=Math.round(cd*.1);st.player.hp=Math.min(st.player.maxHp,st.player.hp+h);}
+    cc*=COMBO_DECAY;if(encD&&count===1)cc=prob(agi,SK.combo)*COMBO_DECAY;
+  }
+  /* LCK閃電命中 */
+  const lightningForce=lck>=20;
+  if((lightningForce||roll(lck,SK.lightning))&&st.enemy.hp>0){
+    const center=lck*2;const n=normalRand();const bolt=Math.max(1,Math.round(center*(1+Math.max(-.5,Math.min(.5,n*.25)))));
+    st.enemy.hp=Math.max(0,st.enemy.hp-bolt);
+    logs.push({c:'ll2',t:`⚡ 閃電命中${lightningForce?'（必定）':''}！額外 ${bolt} 傷害！`});
+  }
+  /* LCK撿到素材 */
+  if(roll(lck,SK.findMat)){const f=pickMatByLck(lck);tryAddToBag(f,true);logs.push({c:'ll2',t:`幸運！撿到 ${ITEMS[f].icon} ${ITEMS[f].name}。`});}
+  /* 魔女之眼：魔法攻擊20%石化 */
+  if(actionName.includes('魔法')&&st.bag.includes('witch_eye')&&Math.random()<.20){st.enemy.stun=1;logs.push({c:'len',t:`魔女之眼！石化敵人1回合！`});}
+  /* 淬毒之刃：附加流血 */
+  if(st.bag.includes('poison_blade')){st.enemy.bleed=(st.enemy.bleed||0)+2;logs.push({c:'lr',t:`淬毒之刃：附加流血 +2（現在：${st.enemy.bleed}）`});}
+  /* LCK武器附魔——下回合生效 */
+  if(roll(lck,SK.enchant)){
+    const{active}=DAknown(st.bag,st.bagSize,G.blueprints);
+    const weapons=active.filter(a=>a.recipe.action&&!['defend','parry'].includes(a.recipe.action));
+    if(weapons.length>0){
+      const chosen=weapons[Math.floor(Math.random()*weapons.length)].recipe;
+      G._pendingEnchantRecipeId=chosen.id;
+      G._enchantedRecipeIdDisplay=chosen.id;
+      logs.push({c:'len',t:`✦ 武器附魔！【${chosen.name}】下回合 AGI/LCK/CHI 臨時翻倍！`});
+      renderMapBag();
+    }
+  }
+  updBSR(st,rid);return logs;
+}
+
+/* ============================================================
+   STATE
+   ============================================================ */
+const G={
+  player:{hp:50,maxHp:50,defending:false,defendPct:0,parried:false,poison:0,shield:0},
+  bagSize:5,bag:Array(25).fill(null),
+  storage:['rusty_sword','spike','spike','spike','spike','wood','wood','wood','wood','wood','wood','spell_matrix','spell_matrix','spell_matrix','spell_matrix'],
+  gold:0,blueprints:[...DEFAULT_BLUEPRINTS],found:[],
+  selStorage:null,selCell:null,mapSelCell:null,
+  map:{floor:1,choices:[]},
+  enemy:null,battleTurn:0,battleResult:null,nextAttack:null,
+  chiStored:0,enchants:{},pendingDrops:[],
+  activeGem:null,nextGem:null,
+  tmpStats:{agi:0,lck:0,chi:0,lckMagic:0},
+  _enchantedRecipeId:null,  /* 本回合生效的附魔 */
+  _pendingEnchantRecipeId:null, /* 下回合生效 */
+  _enchantedRecipeIdDisplay:null, /* 顯示用 */
+  _afterSwapContinue:null, /* swap關閉後要執行的動作 */
+  _consumeCoreActive:false, /* 戰鬥核心超載旗標 */
+};
+
+/* ============================================================
+   SAVE/LOAD
+   ============================================================ */
+function save(){
+  try{localStorage.setItem('bga6',JSON.stringify({
+    player:G.player,bagSize:G.bagSize,bag:G.bag,storage:G.storage,
+    gold:G.gold,blueprints:G.blueprints,
+    found:G.found,map:{floor:G.map.floor},
+  }));}catch(e){}
+}
+function load(){
+  try{const raw=localStorage.getItem('bga6');if(!raw)return false;
+    const s=JSON.parse(raw);Object.assign(G.player,s.player);G.bagSize=s.bagSize||5;G.bag=s.bag||Array(25).fill(null);
+    G.storage=s.storage||[];G.gold=s.gold||0;G.blueprints=s.blueprints||[...DEFAULT_BLUEPRINTS];
+    G.found=s.found||[];G.map.floor=s.map?.floor||1;return true;
+  }catch(e){return false;}
+}
+
+/* ============================================================
+   BAG CAPACITY
+   ============================================================ */
+function tryAddToBag(key,inBattle){
+  const e=G.bag.indexOf(null);
+  if(e!==-1){G.bag[e]=key;G.found.push(e);renderMapBag();return;}
+  if(inBattle)G.pendingDrops.push(key);else openSwap([key]);
+}
+
+/* ============================================================
+   SWAP — 左側改為背包原貌
+   ============================================================ */
+let swapState={bagSel:new Set(),newSel:new Set(),newItems:[]};
+function openSwap(ni){
+  swapState={bagSel:new Set(),newSel:new Set(),newItems:[...ni]};
+  renderSwapModal();
+  document.getElementById('swap-overlay').classList.add('show');
+}
+function renderSwapModal(){
+  /* 左側：背包格子原貌 */
+  const sz=G.bagSize,g=document.getElementById('swap-bag-grid');g.innerHTML='';
+  const{used}=DAknown(G.bag,sz,G.blueprints);
+  const grid=document.createElement('div');grid.className='swap-bag-preview';
+  grid.style.gridTemplateColumns=`repeat(${sz},40px)`;
+  G.bag.forEach((item,i)=>{
+    const cell=document.createElement('div');cell.className='swap-cell'+(item?' hi':'');
+    if(used.has(i))cell.classList.add('rhi');if(swapState.bagSel.has(i))cell.classList.add('sel');
+    if(item){const d=ITEMS[item];cell.innerHTML=`<div class="swap-cell-icon">${d.icon}</div><div class="swap-cell-name">${d.name}</div>`;}
+    if(item){cell.onclick=()=>{swapState.bagSel.has(i)?swapState.bagSel.delete(i):swapState.bagSel.add(i);renderSwapModal();};}
+    grid.appendChild(cell);
+  });
+  g.appendChild(grid);
+  /* 右側：新物品 */
+  const ng=document.getElementById('swap-new-grid');ng.innerHTML='';
+  swapState.newItems.forEach((key,i)=>{const d=ITEMS[key];const ch=document.createElement('div');ch.className='swap-chip swap-new-chip'+(swapState.newSel.has(i)?' sel':'');ch.innerHTML=`<span style="font-size:15px">${d.icon}</span><span>${d.name}</span>`;ch.onclick=()=>{swapState.newSel.has(i)?swapState.newSel.delete(i):swapState.newSel.add(i);renderSwapModal();};ng.appendChild(ch);});
+  const bc=swapState.bagSel.size,nc=swapState.newSel.size,btn=document.getElementById('swap-confirm-btn');
+  document.getElementById('swap-hint').textContent=bc===0&&nc===0?'點選左側捨棄，右側保留。':bc!==nc?`捨棄 ${bc} 個，保留 ${nc} 個 — 數量需相等。`:`✓ 確認替換 ${bc} 個。`;
+  btn.disabled=bc===0||bc!==nc;
+}
+function confirmSwap(){
+  if(swapState.bagSel.size!==swapState.newSel.size||swapState.bagSel.size===0)return;
+  const bi=[...swapState.bagSel],ni=[...swapState.newSel];
+  ni.forEach((n,p)=>{G.bag[bi[p]]=swapState.newItems[n];G.found.push(bi[p]);});
+  closeSwap();
+}
+function closeSwap(){
+  document.getElementById('swap-overlay').classList.remove('show');
+  swapState={bagSel:new Set(),newSel:new Set(),newItems:[]};renderMapBag();
+  /* 處理剩餘pendingDrops */
+  if(G.pendingDrops.length>0){
+    const items=[...G.pendingDrops];G.pendingDrops=[];const ov=[];
+    items.forEach(k=>{const e=G.bag.indexOf(null);if(e!==-1){G.bag[e]=k;G.found.push(e);}else ov.push(k);});
+    if(ov.length>0){setTimeout(()=>openSwap(ov),200);return;}
+  }
+  /* BUG FIX: 放棄替換後繼續顯示繼續按鈕 */
+  if(G._afterSwapContinue){const fn=G._afterSwapContinue;G._afterSwapContinue=null;fn();}
+}
+
+/* ============================================================
+   BLUEPRINT 系統（三選一，每5層觸發）
+   ============================================================ */
+let bpQueue=[],bpAfterCb=null;
+
+/* 顯示已學到的藍圖（bp-overlay）*/
+function flushBpQueue(afterAll){
+  bpAfterCb=afterAll||null;if(!bpQueue.length){afterAll&&afterAll();return;}showBpOverlay(bpQueue.shift());
+}
+function showBpOverlay(recipeId){
+  const rec=RECIPES.find(r=>r.id===recipeId);if(!rec)return;
+  document.getElementById('bp-reveal-name').textContent=rec.name;
+  const cb=rec.codebook,g=document.getElementById('bp-reveal-grid');
+  g.style.gridTemplateColumns=`repeat(${cb.cols},28px)`;g.innerHTML='';
+  cb.cells.forEach(c=>{const d=document.createElement('div');d.className='bp-reveal-cell'+(c==='_'?' empty':'');d.textContent=c==='_'?'':c;g.appendChild(d);});
+  const pips=document.getElementById('bp-reveal-pips');pips.innerHTML=buildPips(rec);
+  document.getElementById('bp-reveal-effect').textContent=rec.effect;
+  document.getElementById('bp-overlay').classList.add('show');
+  document.getElementById('bp-ok-btn').onclick=()=>{
+    document.getElementById('bp-overlay').classList.remove('show');
+    if(bpQueue.length>0)setTimeout(()=>showBpOverlay(bpQueue.shift()),300);
+    else if(bpAfterCb){const cb=bpAfterCb;bpAfterCb=null;setTimeout(cb,300);}
+  };
+}
+
+/* 藍圖三選一選擇介面 */
+function showBpChoice(floor, afterCb){
+  const unknown=RECIPES.filter(r=>
+    !DEFAULT_BLUEPRINTS.includes(r.id)&&
+    !ADVANCED_BLUEPRINTS.includes(r.id)&&
+    !G.blueprints.includes(r.id)
+  );
+  /* 若沒有可學的藍圖，直接繼續 */
+  if(!unknown.length){afterCb&&afterCb();return;}
+
+  /* 隨機抽3個選項（不足3個就全部顯示） */
+  const shuffled=[...unknown].sort(()=>Math.random()-.5);
+  const opts=shuffled.slice(0,Math.min(3,shuffled.length));
+
+  document.getElementById('bpc-sub').textContent=`通過第 ${floor} 層里程碑！選擇一個新配方加入你的藍圖庫。`;
+  const cards=document.getElementById('bpc-cards');cards.innerHTML='';
+
+  opts.forEach(rec=>{
+    const cb=rec.codebook;
+    const card=document.createElement('div');card.className='bpc-card';
+
+    /* 小格子預覽 */
+    let gridHTML=`<div class="bpc-grid" style="grid-template-columns:repeat(${cb.cols},20px)">`;
+    cb.cells.forEach(c=>{gridHTML+=`<div class="bpc-cell${c==='_'?' empty':''}">${c==='_'?'':c}</div>`;});
+    gridHTML+='</div>';
+
+    card.innerHTML=`${gridHTML}<div class="bpc-info"><div class="bpc-name">${rec.name} <span style="font-size:10px;color:var(--text3)">${rec.size}格</span></div><div class="bpc-effect">${rec.effect}</div><div class="bpc-pips">${buildPips(rec)}</div></div>`;
+
+    card.onclick=()=>{
+      G.blueprints.push(rec.id);save();
+      document.getElementById('bp-choice-overlay').classList.remove('show');
+      /* 顯示學到的藍圖彈窗，然後繼續 */
+      bpQueue.push(rec.id);
+      flushBpQueue(afterCb);
+    };
+    cards.appendChild(card);
+  });
+
+  document.getElementById('bp-choice-overlay').classList.add('show');
+}
+
+/* ============================================================
+   TUTORIAL
+   ============================================================ */
+let tutCurrentPage=0;const TUT_PAGES=3;
+function showTutorial(){tutCurrentPage=0;updateTutPage();document.getElementById('tutorial-overlay').classList.add('show');}
+function tutPage(dir){
+  tutCurrentPage=Math.max(0,Math.min(TUT_PAGES-1,tutCurrentPage+dir));updateTutPage();
+  if(tutCurrentPage===TUT_PAGES-1&&dir>0){document.getElementById('tut-next').textContent='開始遊戲 →';document.getElementById('tut-next').onclick=()=>document.getElementById('tutorial-overlay').classList.remove('show');}
+  else{document.getElementById('tut-next').textContent='下一頁 →';document.getElementById('tut-next').onclick=()=>tutPage(1);}
+}
+function updateTutPage(){
+  for(let i=0;i<TUT_PAGES;i++)document.getElementById(`tut-${i}`).classList.toggle('active',i===tutCurrentPage);
+  document.getElementById('tut-prev').style.visibility=tutCurrentPage===0?'hidden':'visible';
+  const dots=document.getElementById('tut-dots');dots.innerHTML='';
+  for(let i=0;i<TUT_PAGES;i++){const d=document.createElement('div');d.className='tut-dot'+(i===tutCurrentPage?' on':'');dots.appendChild(d);}
+}
+function toggleTip(id,show){document.getElementById(id).classList.toggle('tip-show',show);}
+
+/* ============================================================
+   PREP UI
+   ============================================================ */
+function showTab(tab){
+  ['storage','recipe'].forEach(t=>{
+    document.getElementById(`tab-${t}-content`).style.display=t===tab?'':'none';
+    document.getElementById(`tab-${t}`).classList.toggle('active-tab',t===tab);
+  });
+  if(tab==='recipe')renderFullRecipeList();
+}
+function unloadBag(){G.bag.forEach((k,i)=>{if(k){G.storage.push(k);G.bag[i]=null;}});G.selCell=null;renderStorage();renderPrepBag();}
+function renderStorage(){
+  const g=document.getElementById('storage-grid');g.innerHTML='';
+  const m=new Map();G.storage.forEach(k=>m.set(k,(m.get(k)||0)+1));
+  if(!m.size){g.innerHTML='<div style="color:var(--text3);font-size:12px">倉庫是空的</div>';return;}
+  m.forEach((cnt,key)=>{
+    const d=ITEMS[key];const el=document.createElement('div');el.className='stk-chip'+(G.selStorage===key?' sel':'');
+    el.innerHTML=`<span style="font-size:15px">${d.icon}</span><span>${d.name}</span>${cnt>1?`<span class="stk-cnt">×${cnt}</span>`:''}<span class="rar r${d.rarity}">${d.rarity}</span>`;
+    el.onclick=()=>{G.selStorage=G.selStorage===key?null:key;G.selCell=null;renderStorage();renderPrepBag();if(G.selStorage)showInfo(key);};
+    el.ondblclick=()=>{const e=G.bag.indexOf(null);if(e===-1)return;G.bag[e]=key;const si=G.storage.indexOf(key);if(si!==-1)G.storage.splice(si,1);G.selStorage=null;renderStorage();renderPrepBag();};
+    g.appendChild(el);
+  });
+}
+function renderPrepBag(){
+  if(placeState){renderPrepBagWithPlace();return;}
+  const sz=G.bagSize,g=document.getElementById('prep-bag');
+  g.style.gridTemplateColumns=`repeat(${sz},var(--cs))`;g.innerHTML='';
+  const bonus=calcMaxHpBonus();G.player.maxHp=50+bonus;G.player.hp=Math.min(G.player.hp,G.player.maxHp);
+  const{active,used}=DAknown(G.bag,sz,G.blueprints);
+  const passiveIdxs=new Set();G.bag.forEach((k,i)=>{if(k&&isPassive(k)&&used.has(i))passiveIdxs.add(i);});
+  G.bag.forEach((item,i)=>{
+    const cell=document.createElement('div');cell.className='cell'+(item?' hi':'');
+    if(used.has(i))cell.classList.add(passiveIdxs.has(i)?'rhi-lit':'rhi');
+    if(G.selCell===i)cell.classList.add('sel');
+    if(G.enchants?.[i])cell.classList.add('enc');
+    if(item){
+      const d=ITEMS[item];
+      let icon=d.icon,name=d.name;
+      if(item==='gem'&&G.nextGem){icon='💎';name=`${G.nextGem.prefix}寶石`;}
+      cell.innerHTML=`<div class="ci">${icon}</div><div class="cn">${name}</div>`;
+    }
+    cell.onclick=()=>onPrepCell(i);g.appendChild(cell);
+  });
+  renderRecipeStatus(active);updTopBar();
+}
+function onPrepCell(idx){
+  if(G.selStorage!==null){
+    const ex=G.bag[idx];G.bag[idx]=G.selStorage;
+    const si=G.storage.indexOf(G.selStorage);if(si!==-1)G.storage.splice(si,1);
+    if(ex)G.storage.push(ex);
+    if(ITEMS[G.selStorage]?.isGem){G.bag.forEach((k,i)=>{if(k&&ITEMS[k]?.isGem&&i!==idx){G.storage.push(k);G.bag[i]=null;}});}
+    G.selStorage=null;renderStorage();renderPrepBag();
+  }else if(G.bag[idx]){
+    if(G.selCell!==null&&G.selCell!==idx){const tmp=G.bag[G.selCell];G.bag[G.selCell]=G.bag[idx];G.bag[idx]=tmp;G.selCell=null;renderPrepBag();}
+    else if(G.selCell===idx){G.storage.push(G.bag[idx]);G.bag[idx]=null;G.selCell=null;renderStorage();renderPrepBag();}
+    else{G.selCell=idx;showInfo(G.bag[idx]);renderPrepBag();}
+  }else if(G.selCell!==null){G.bag[idx]=G.bag[G.selCell];G.bag[G.selCell]=null;G.selCell=null;renderPrepBag();}
+}
+/* ============================================================
+   配方一鍵放入系統
+   ============================================================ */
+let placeState=null;
+/* placeState = { recipeId, rotation:0|1, hoverIdx:null } */
+
+/* 計算配方所需素材的對照表 */
+function recipeNeeds(rec){
+  /* 從 codebook.cells 統計（排除 '_'） */
+  const map={};
+  (rec.codebook?.cells||[]).forEach(c=>{if(c&&c!=='_')map[c]=(map[c]||0)+1;});
+  /* 把符號轉成 itemKey */
+  const sym2key={'◈':'spike','▤':'wood','◆':'iron_ore','☆':'spell_matrix'};
+  const needs={};
+  Object.entries(map).forEach(([sym,cnt])=>{const k=sym2key[sym];if(k)needs[k]=(needs[k]||0)+cnt;});
+  return needs;
+}
+
+/* 檢查倉庫是否有足夠素材 */
+function storageHasEnough(needs){
+  const counts={};
+  G.storage.forEach(k=>{counts[k]=(counts[k]||0)+1;});
+  return Object.entries(needs).every(([k,n])=>(counts[k]||0)>=n);
+}
+
+/* 取得配方在指定起始格、指定旋轉方向下，所占用的格子索引列表
+   rotation 0 = 橫（原始），1 = 直  */
+function getPlaceCells(rec, startIdx, rotation){
+  const sz=G.bagSize;
+  const r0=Math.floor(startIdx/sz), c0=startIdx%sz;
+  const cb=rec.codebook;
+  /* 配方的 cols/rows 是橫向版本 */
+  const cols= rotation===0 ? cb.cols : cb.rows;
+  const rows= rotation===0 ? cb.rows : cb.cols;
+
+  /* 超出邊界 */
+  if(c0+cols>sz||r0+rows>sz)return null;
+
+  const cells=cb.cells; /* 原始橫向排列 */
+  const idxs=[];
+  for(let dr=0;dr<rows;dr++){
+    for(let dc=0;dc<cols;dc++){
+      /* 旋轉映射：直向時 cell[dc][dr] = cells[dr_orig][dc_orig] */
+      let cellVal;
+      if(rotation===0){
+        cellVal=cells[dr*cb.cols+dc];
+      }else{
+        /* 順時針90度：新的(dr,dc)對應原來的(cb.rows-1-dc, dr) */
+        const origR=cb.rows-1-dc, origC=dr;
+        if(origR<0||origR>=cb.rows||origC<0||origC>=cb.cols){cellVal='_';}
+        else cellVal=cells[origR*cb.cols+origC];
+      }
+      if(cellVal&&cellVal!=='_'){
+        idxs.push({bagIdx:(r0+dr)*sz+(c0+dc), sym:cellVal});
+      }
+    }
+  }
+  return idxs;
+}
+
+/* 進入放置模式 */
+function enterPlaceMode(recipeId){
+  const rec=RECIPES.find(r=>r.id===recipeId);
+  if(!rec)return;
+  placeState={recipeId, rotation:0, hoverIdx:null};
+  G.selStorage=null;G.selCell=null;
+  document.getElementById('place-recipe-name').textContent=`放置：${rec.name}`;
+  document.getElementById('place-bar').classList.add('show');
+  _updatePlaceHint();
+  renderPrepBag();
+}
+
+function placeCancel(){
+  placeState=null;
+  document.getElementById('place-bar').classList.remove('show');
+  renderPrepBag();
+}
+
+function placeRotate(){
+  if(!placeState)return;
+  placeState.rotation=placeState.rotation===0?1:0;
+  placeState.hoverIdx=null;
+  _updatePlaceHint();
+  renderPrepBag();
+}
+
+function _updatePlaceHint(){
+  if(!placeState)return;
+  const rec=RECIPES.find(r=>r.id===placeState.recipeId);
+  const rot=placeState.rotation===0?'橫向':'直向';
+  const cb=rec.codebook;
+  const cols=placeState.rotation===0?cb.cols:cb.rows;
+  const rows=placeState.rotation===0?cb.rows:cb.cols;
+  document.getElementById('place-hint').textContent=`${rot} ${cols}×${rows}｜左鍵點空位放置，右鍵旋轉`;
+}
+
+/* 嘗試確認放置 */
+function tryPlaceRecipe(startIdx){
+  if(!placeState)return;
+  const rec=RECIPES.find(r=>r.id===placeState.recipeId);
+  if(!rec)return;
+  const placement=getPlaceCells(rec,startIdx,placeState.rotation);
+  if(!placement){
+    document.getElementById('place-hint').textContent='⚠ 超出背包邊界，換個位置或旋轉試試';
+    return;
+  }
+
+  const sym2key={'◈':'spike','▤':'wood','◆':'iron_ore','☆':'spell_matrix'};
+  const blocked=placement.some(({bagIdx})=>G.bag[bagIdx]!==null);
+  if(blocked){
+    document.getElementById('place-hint').textContent='⚠ 有格子已有物品，換個位置試試';
+    return;
+  }
+
+  /* 從倉庫取出素材 */
+  const toTake={};
+  placement.forEach(({sym})=>{const k=sym2key[sym];if(k)toTake[k]=(toTake[k]||0)+1;});
+  let ok=true;
+  Object.entries(toTake).forEach(([k,n])=>{
+    const avail=G.storage.filter(s=>s===k).length;
+    if(avail<n)ok=false;
+  });
+  if(!ok){
+    document.getElementById('place-hint').textContent='⚠ 倉庫素材不足';
+    return;
+  }
+
+  /* 執行放置 */
+  Object.entries(toTake).forEach(([k,n])=>{
+    let removed=0;
+    for(let i=G.storage.length-1;i>=0&&removed<n;i--){
+      if(G.storage[i]===k){G.storage.splice(i,1);removed++;}
+    }
+  });
+  placement.forEach(({bagIdx,sym})=>{
+    const k=sym2key[sym];
+    if(k)G.bag[bagIdx]=k;
+  });
+
+  placeCancel();
+  save();
+  renderStorage();
+  renderPrepBag();
+}
+
+/* renderPrepBag 覆寫：放置模式時加入互動 */
+function renderPrepBagWithPlace(){
+  const sz=G.bagSize,g=document.getElementById('prep-bag');
+  g.style.gridTemplateColumns=`repeat(${sz},var(--cs))`;g.innerHTML='';
+  const bonus=calcMaxHpBonus();G.player.maxHp=50+bonus;G.player.hp=Math.min(G.player.hp,G.player.maxHp);
+  const{active,used}=DAknown(G.bag,sz,G.blueprints);
+  const passiveIdxs=new Set();G.bag.forEach((k,i)=>{if(k&&isPassive(k)&&used.has(i))passiveIdxs.add(i);});
+
+  /* 計算 hover 預覽格子 */
+  let previewSet=new Set(),validHover=false;
+  if(placeState&&placeState.hoverIdx!==null){
+    const rec=RECIPES.find(r=>r.id===placeState.recipeId);
+    const placement=rec?getPlaceCells(rec,placeState.hoverIdx,placeState.rotation):null;
+    if(placement){
+      validHover=placement.every(({bagIdx})=>G.bag[bagIdx]===null);
+      placement.forEach(({bagIdx})=>previewSet.add(bagIdx));
+    }
+  }
+
+  G.bag.forEach((item,i)=>{
+    const cell=document.createElement('div');
+    /* 放置模式 class */
+    if(previewSet.has(i)){
+      cell.className='cell '+(validHover?'place-hover':'place-invalid');
+    }else if(!item){
+      cell.className='cell place-preview';
+    }else{
+      cell.className='cell hi';
+    }
+
+    if(item){
+      const d=ITEMS[item];
+      let icon=d.icon,name=d.name;
+      if(item==='gem'&&G.nextGem){icon='💎';name=`${G.nextGem.prefix}寶石`;}
+      cell.innerHTML=`<div class="ci">${icon}</div><div class="cn">${name}</div>`;
+    }
+
+    /* 右鍵旋轉（所有格子都可以） */
+    cell.oncontextmenu=(e)=>{e.preventDefault();placeRotate();};
+
+    if(!item){
+      /* 左鍵：確認放置 */
+      cell.onclick=(e)=>{
+        e.preventDefault();
+        tryPlaceRecipe(i);
+      };
+    }
+    g.appendChild(cell);
+  });
+
+  /* hover 用 grid 層級的 mouseover 事件，避免 per-cell re-render */
+  g.onmouseover=(e)=>{
+    if(!placeState)return;
+    const cell=e.target.closest('.cell');
+    if(!cell)return;
+    const cells=[...g.children];
+    const idx=cells.indexOf(cell);
+    if(idx<0)return;
+    if(G.bag[idx]!==null)return;
+    if(placeState.hoverIdx===idx)return;
+    placeState.hoverIdx=idx;
+    _updatePlacePreview(g,sz);
+  };
+  g.onmouseleave=()=>{
+    if(!placeState)return;
+    placeState.hoverIdx=null;
+    _updatePlacePreview(g,sz);
+  };
+
+  renderRecipeStatus(active);updTopBar();
+}
+
+/* 只更新格子的 class，不重建 DOM */
+function _updatePlacePreview(g,sz){
+  if(!placeState)return;
+  const rec=RECIPES.find(r=>r.id===placeState.recipeId);
+  let previewSet=new Set(),validHover=false;
+  if(placeState.hoverIdx!==null){
+    const placement=rec?getPlaceCells(rec,placeState.hoverIdx,placeState.rotation):null;
+    if(placement){
+      validHover=placement.every(({bagIdx})=>G.bag[bagIdx]===null);
+      placement.forEach(({bagIdx})=>previewSet.add(bagIdx));
+    }
+  }
+  const cells=[...g.children];
+  cells.forEach((cell,i)=>{
+    const item=G.bag[i];
+    if(previewSet.has(i)){
+      cell.className='cell '+(validHover?'place-hover':'place-invalid');
+    }else if(!item){
+      cell.className='cell place-preview';
+    }else{
+      cell.className='cell hi';
+    }
+  });
+}
+
+function buildPips(rec){
+  let s='';
+  if(rec.atk)s+=`<span class="sp patk">ATK+${rec.atk}</span>`;
+  if(rec.agi)s+=`<span class="sp pagi">AGI+${rec.agi}</span>`;
+  if(rec.lck)s+=`<span class="sp plck">LCK+${rec.lck}</span>`;
+  if(rec.chi)s+=`<span class="sp pchi">CHI+${rec.chi}</span>`;
+  if(rec.maxHpBonus)s+=`<span class="sp php2">HP+${rec.maxHpBonus}</span>`;
+  if(rec.hp_regen_pct)s+=`<span class="sp" style="background:var(--green-bg);color:var(--green);border:.5px solid var(--green-bd)">回血${rec.hp_regen_pct*100}%/回合</span>`;
+  return s;
+}
+function renderRecipeStatus(active){
+  const counts={};active.forEach(a=>{counts[a.recipe.id]=(counts[a.recipe.id]||0)+1;});
+  const list=document.getElementById('recipe-list');list.innerHTML='';
+  RECIPES.filter(r=>G.blueprints.includes(r.id)).forEach(rec=>{
+    const on=!!counts[rec.id];
+    const needs=recipeNeeds(rec);
+    const cb=rec.codebook;
+    const fitsInBag=cb.cols<=G.bagSize&&cb.rows<=G.bagSize;
+    const canPlace=!on&&fitsInBag&&Object.keys(needs).length>0&&storageHasEnough(needs);
+    const row=document.createElement('div');row.className='rrow';
+    /* 需求素材文字 */
+    const sym2key={'◈':'spike','▤':'wood','◆':'iron_ore','☆':'spell_matrix'};
+    const key2icon={spike:'◈',wood:'▤',iron_ore:'◆',spell_matrix:'☆'};
+    const needStr=Object.entries(needs).map(([k,n])=>`${key2icon[k]||k}×${n}`).join(' ');
+    let rightHTML=`<span class="rtag ${on?'tok':'tno'}">${on?'觸發':'未達成'}</span>`;
+    if(canPlace)rightHTML+=`<button class="btn-place" onclick="enterPlaceMode('${rec.id}')">一鍵放入</button>`;
+    row.innerHTML=`<div style="flex:1"><div style="font-size:12px;font-weight:500">${rec.name}</div><div class="srow">${buildPips(rec)}</div>${needStr?`<div style="font-size:10px;color:var(--text3);margin-top:2px">需要：${needStr}</div>`:''}</div>${rightHTML}`;
+    list.appendChild(row);
+  });
+  const chip=document.getElementById('trchip'),txt=document.getElementById('trtxt');
+  const names=Object.entries(counts).filter(([,c])=>c>0).map(([id])=>RECIPES.find(r=>r.id===id)?.name||id);
+  if(names.length){chip.style.display='';txt.textContent=names.join('、');}else chip.style.display='none';
+}
+function renderFullRecipeList(){
+  const el=document.getElementById('recipe-list-full');el.innerHTML='';
+  RECIPES.forEach(rec=>{
+    const known=G.blueprints.includes(rec.id);const cb=rec.codebook;
+    const div=document.createElement('div');div.className='cbr'+(known?'':' blueprint-locked');
+    let gh=`<div class="cbg" style="grid-template-columns:repeat(${cb.cols},22px)">`;
+    cb.cells.forEach(c=>{gh+=`<div class="cbc${c==='_'?' empty':''}">${c==='_'?'':c}</div>`;});gh+='</div>';
+    div.innerHTML=`<div class="cbn">${rec.name} <span style="font-size:10px;color:var(--text3)">${rec.size}格</span><span class="bp-badge ${known?'bp-known':'bp-unknown'}">${known?'已習得':'未知'}</span></div>${known?gh+'<div class="srow" style="margin-bottom:3px">'+buildPips(rec)+'</div><div class="cbe">'+rec.effect+'</div>'+(cb.note?`<div style="font-size:10px;color:var(--text3);margin-top:2px">${cb.note}</div>`:''):'<div style="font-size:11px;color:var(--text3)">擊殺怪物有機率習得此藍圖</div>'}`;
+    el.appendChild(div);
+  });
+}
+function showInfo(key){
+  if(!key)return;const d=ITEMS[key];
+  document.getElementById('infopanel').innerHTML=`<div class="pl">物品資訊</div><div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><span style="font-size:26px">${d.icon}</span><div><div style="font-size:15px;font-weight:500">${d.name}</div><span class="rar r${d.rarity}">${d.rarity}</span></div></div><div style="font-size:12px;color:var(--text2);line-height:1.6">${d.desc}</div>`;
+}
+function updTopBar(){
+  const{agi,lck,chi}=calcRS(G);
+  document.getElementById('thp').textContent=`${G.player.hp}/${G.player.maxHp}`;
+  document.getElementById('tagi').textContent=agi;document.getElementById('tlck').textContent=lck;document.getElementById('tchi').textContent=chi;
+  document.getElementById('tfl').textContent=G.map.floor<=20?`${G.map.floor}F`:'完成';
+  document.getElementById('tgold').textContent=G.gold;
+  const ta=G.tmpStats;
+  document.getElementById('tagi-tmp').textContent=ta.agi>0?` +${ta.agi}`:'';
+  document.getElementById('tlck-tmp').textContent=ta.lck>0?` +${ta.lck}`:'';
+  document.getElementById('tchi-tmp').textContent=ta.chi>0?` +${ta.chi}`:'';
+}
+function toggleCB(){
+  const p=document.getElementById('cbp'),b=document.getElementById('cbb');
+  const open=p.classList.toggle('open');b.textContent=open?'設計圖速覽 ▾':'設計圖速覽 ▸';
+  if(open&&!p.innerHTML.trim()){
+    RECIPES.filter(r=>G.blueprints.includes(r.id)).forEach(r=>{
+      const cb=r.codebook,div=document.createElement('div');div.className='cbr';
+      let gh=`<div class="cbg" style="grid-template-columns:repeat(${cb.cols},22px)">`;cb.cells.forEach(c=>{gh+=`<div class="cbc${c==='_'?' empty':''}">${c==='_'?'':c}</div>`;});gh+='</div>';
+      div.innerHTML=`<div class="cbn">${r.name}</div>${gh}<div class="srow" style="margin-bottom:3px">${buildPips(r)}</div><div class="cbe">${r.effect}</div>`;
+      p.appendChild(div);
+    });
+  }
+}
+
+/* ============================================================
+   SHOP
+   ============================================================ */
+function renderShop(){
+  document.getElementById('shop-gold-display').textContent=`💰 ${G.gold}`;
+  SHOP_ITEMS.blueprint=RECIPES.filter(r=>!G.blueprints.includes(r.id)&&!DEFAULT_BLUEPRINTS.includes(r.id)&&!ADVANCED_BLUEPRINTS.includes(r.id)).map(r=>({key:'bp_'+r.id,price:200,isBp:true,recipeId:r.id}));
+  renderShopItems();
+}
+function setShopCat(cat){currentShopCat=cat;document.querySelectorAll('.shop-cat').forEach(b=>b.classList.remove('active'));document.getElementById(`scat-${cat}`).classList.add('active');renderShopItems();}
+function renderShopItems(){
+  const el=document.getElementById('shop-items');el.innerHTML='';
+  (SHOP_ITEMS[currentShopCat]||[]).forEach(entry=>{
+    const card=document.createElement('div');card.className='shop-card';
+    if(entry.isBp){const rec=RECIPES.find(r=>r.id===entry.recipeId);if(!rec)return;
+      card.innerHTML=`<div class="shop-card-top"><span class="shop-icon">📜</span><div><div class="shop-name">${rec.name} 藍圖</div><span class="bp-badge bp-unknown">未習得</span></div></div><div class="shop-desc">${rec.effect}</div><div class="shop-price"><span class="price-tag">💰 ${entry.price}</span><button class="buy-btn" ${G.gold<entry.price?'disabled':''} onclick="buyBlueprint('${rec.id}',${entry.price})">購買</button></div>`;
+    }else{const d=ITEMS[entry.key];if(!d)return;
+      card.innerHTML=`<div class="shop-card-top"><span class="shop-icon">${d.icon}</span><div><div class="shop-name">${d.name}</div><span class="rar r${d.rarity}">${d.rarity}</span></div></div><div class="shop-desc">${d.desc}</div><div class="shop-price"><span class="price-tag">💰 ${entry.price}</span><button class="buy-btn" ${G.gold<entry.price?'disabled':''} onclick="buyItem('${entry.key}',${entry.price})">購買</button></div>`;
+    }
+    el.appendChild(card);
+  });
+  if(!(SHOP_ITEMS[currentShopCat]||[]).length)el.innerHTML='<div style="color:var(--text3);font-size:13px">暫無商品</div>';
+}
+function buyItem(key,price){if(G.gold<price)return;G.gold-=price;G.storage.push(key);save();updTopBar();document.getElementById('shop-gold-display').textContent=`💰 ${G.gold}`;renderShopItems();}
+function buyBlueprint(recipeId,price){if(G.gold<price)return;G.gold-=price;G.blueprints.push(recipeId);save();updTopBar();document.getElementById('shop-gold-display').textContent=`💰 ${G.gold}`;renderShop();showBpOverlay(recipeId);}
+
+/* ============================================================
+   FORGE
+   ============================================================ */
+function renderForge(){forgeSelected=[];forgePreview=null;renderForgePool();renderForgePreview();}
+function renderForgePool(){
+  const pool=document.getElementById('forge-pool');pool.innerHTML='';
+  const m=new Map();G.storage.forEach((k,i)=>{if(ITEMS[k]&&!ITEMS[k].isGem)m.set(k,(m.get(k)||0)+1);});
+  if(!m.size){pool.innerHTML='<div style="color:var(--text3);font-size:12px">倉庫無可用素材</div>';return;}
+  m.forEach((cnt,key)=>{
+    const d=ITEMS[key];const el=document.createElement('div');
+    const selCnt=forgeSelected.filter(s=>s.key===key).length;
+    el.className='forge-chip'+(selCnt>0?' sel':'');
+    el.innerHTML=`<span style="font-size:15px">${d.icon}</span><span>${d.name}</span>${cnt-selCnt>1?`<span class="stk-cnt">×${cnt-selCnt}</span>`:''}`;
+    el.onclick=()=>{
+      const avail=G.storage.filter(k=>k===key).length-forgeSelected.filter(s=>s.key===key).length;
+      if(forgeSelected.length>=10||avail<=0)return;
+      const idx=G.storage.reduce((acc,k,i)=>{if(k===key&&!forgeSelected.some(s=>s.storageIdx===i))acc.push(i);return acc;},[]);
+      if(!idx.length)return;
+      forgeSelected.push({key,storageIdx:idx[0]});renderForgePool();renderForgePreview();
+    };
+    pool.appendChild(el);
+  });
+  document.getElementById('forge-count').textContent=forgeSelected.length;
+  const totalVal=forgeSelected.reduce((s,x)=>s+itemValue(x.key),0);
+  document.getElementById('forge-value').textContent=totalVal;
+  document.getElementById('forge-btn').disabled=forgeSelected.length<3||forgeSelected.length>10;
+  document.getElementById('forge-reset-btn').disabled=forgeSelected.length===0;
+}
+function renderForgePreview(){
+  const el=document.getElementById('forge-preview');
+  if(forgeSelected.length<3){el.innerHTML='<div style="color:var(--text3);font-size:12px">選擇 3~10 個素材後預覽</div>';return;}
+  const totalVal=forgeSelected.reduce((s,x)=>s+itemValue(x.key),0);
+  const tier=calcForgeTier(totalVal);const tierLabel=['','弱（T1）','中（T2）','強（T3）','極（T4）'][tier];
+  el.innerHTML=`<div style="font-size:12px;color:var(--text2)">加總價值：${totalVal}　強度：${tierLabel}</div><div style="font-size:11px;color:var(--text3);margin-top:4px">煉製後屬性與特性隨機生成，可看到完整效果再出發。</div>`;
+}
+function doForge(){
+  if(forgeSelected.length<3||forgeSelected.length>10)return;
+  /* 移除素材 */
+  forgeSelected.forEach(({storageIdx})=>{G.storage[storageIdx]=null;});G.storage=G.storage.filter(k=>k!==null);
+  const totalVal=forgeSelected.reduce((s,x)=>s+itemValue(x.key),0);
+  const result=calcForgeStats(totalVal);
+  /* 移除舊寶石 */
+  G.storage=G.storage.filter(k=>k!=='gem');G.storage.push('gem');G.nextGem=result;
+  /* 顯示完整效果 */
+  const attrName={agi:'AGI',lck:'LCK',chi:'CHI'}[result.attr];
+  const traitHTML=result.trait?`<div class="gem-trait">特性：${result.trait.name}<br><span style="font-size:11px;opacity:.8">${result.trait.desc}</span></div>`:'';
+  document.getElementById('forge-preview').innerHTML=`<div class="gem-card"><div class="gem-name">💎 ${result.prefix}的寶石（Tier ${result.tier}）</div><div class="gem-desc">${attrName} +${result.stat}<br>探險中攜帶有效，撤離後消失。</div>${traitHTML}</div>`;
+  forgeSelected=[];renderForgePool();save();
+}
+function resetForge(){
+  forgeSelected=[];renderForgePool();renderForgePreview();
+}
+
+/* ============================================================
+   EXPEDITION
+   ============================================================ */
+function SS(name){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById('screen-'+name).classList.add('active');}
+function startExpedition(){
+  const confirmEl=document.createElement('div');
+  confirmEl.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:250;display:flex;align-items:center;justify-content:center;';
+  confirmEl.innerHTML=`<div style="background:var(--bg2);border:.5px solid var(--border);border-radius:var(--rl);padding:24px;width:min(90vw,360px)"><div style="font-size:16px;font-weight:500;margin-bottom:10px">出發確認</div><div style="font-size:13px;color:var(--text2);line-height:1.8;margin-bottom:18px">⚠ <b>死亡</b>時，背包內所有物品將<b>全數掉落遺失</b>，金幣保留。<br>✓ <b>撤離</b>可在戰鬥中選擇，安全帶回本次搜刮物。</div><div style="display:flex;gap:8px"><button class="btn-green" style="flex:1;padding:8px 0" id="confirm-depart">出發！</button><button style="flex:1;padding:8px 0" id="cancel-depart">取消</button></div></div>`;
+  document.body.appendChild(confirmEl);
+  document.getElementById('cancel-depart').onclick=()=>document.body.removeChild(confirmEl);
+  document.getElementById('confirm-depart').onclick=()=>{document.body.removeChild(confirmEl);_doStart();};
+}
+function _doStart(){
+  G.found=[];G.pendingDrops=[];G.tmpStats={agi:0,lck:0,chi:0,lckMagic:0};
+  const bonus=calcMaxHpBonus();G.player.maxHp=50+bonus;G.player.hp=G.player.maxHp;
+  G.player.poison=0;G.player.shield=0;G.chiStored=0;G.enchants={};G.mapSelCell=null;
+  G._enchantedRecipeId=null;G._pendingEnchantRecipeId=null;G._enchantedRecipeIdDisplay=null;
+  G.activeGem=G.bag.includes('gem')&&G.nextGem?G.nextGem:null;G.nextGem=null;
+  G.map.floor=1;G.map.choices=genFloorChoices(1);
+  save();SS('map');renderMapFloor();showNodeChoices();
+}
+
+/* ============================================================
+   MAP UI
+   ============================================================ */
+const NTYPE_META={battle:{icon:'⚔',label:'戰鬥'},rat:{icon:'🐀',label:'鄉下老鼠'},elite:{icon:'👑',label:'菁英'},boss:{icon:'☠',label:'BOSS'},chest:{icon:'📦',label:'寶箱'},slot:{icon:'🎰',label:'拉霸'}};
+function renderMapFloor(){
+  const f=G.map.floor;
+  document.getElementById('fh-floor').textContent=`${f}F`;
+  if(f===10){document.getElementById('fh-name').textContent='菁英戰';document.getElementById('fh-sub').textContent='⚠ 高強度敵人';}
+  else if(f===20){document.getElementById('fh-name').textContent='BOSS戰';document.getElementById('fh-sub').textContent='☠ 最終關卡';}
+  else{document.getElementById('fh-name').textContent=`第 ${f} 層`;document.getElementById('fh-sub').textContent=`深度：${Math.round(f/20*100)}%`;}
+  const tags=document.getElementById('fh-tags');tags.innerHTML='';
+  if(G.found.length>0){const t=document.createElement('div');t.className='fh-tag';t.style.color='var(--green)';t.style.borderColor='var(--green-bd)';t.textContent=`搜刮 ${G.found.length} 件`;tags.appendChild(t);}
+  if(G.tmpStats.agi||G.tmpStats.lck||G.tmpStats.chi){const t=document.createElement('div');t.className='fh-tag';t.style.color='var(--teal)';t.style.borderColor='var(--teal-bd)';t.textContent=`臨時 AGI+${G.tmpStats.agi} LCK+${G.tmpStats.lck} CHI+${G.tmpStats.chi}`;tags.appendChild(t);}
+  const gt=document.createElement('div');gt.className='fh-tag';gt.style.color='var(--gold)';gt.style.borderColor='var(--gold-bd)';gt.textContent=`💰 ${G.gold}`;tags.appendChild(gt);
+  renderMapBag();updTopBar();
+}
+function renderMapBag(){
+  const sz=G.bagSize,g=document.getElementById('map-bag');
+  g.style.gridTemplateColumns=`repeat(${sz},48px)`;g.innerHTML='';
+  const bonus=calcMaxHpBonus();G.player.maxHp=50+bonus;G.player.hp=Math.min(G.player.hp,G.player.maxHp);
+  const{active,used}=DAknown(G.bag,sz,G.blueprints);
+  const passiveIdxs=new Set();G.bag.forEach((k,i)=>{if(k&&isPassive(k)&&used.has(i))passiveIdxs.add(i);});
+  /* 找出附魔亮起的格子 */
+  const enchantedIdxs=new Set();
+  if(G._enchantedRecipeIdDisplay){const a=active.find(a=>a.recipe.id===G._enchantedRecipeIdDisplay);if(a)a.idxs.forEach(i=>enchantedIdxs.add(i));}
+  G.bag.forEach((item,i)=>{
+    const cell=document.createElement('div');cell.className='map-cell'+(item?' hi':'');
+    if(enchantedIdxs.has(i))cell.classList.add('enchanted-active');
+    else if(used.has(i))cell.classList.add(passiveIdxs.has(i)?'rhi-lit':'rhi');
+    if(G.enchants?.[i])cell.classList.add('enc');
+    if(item&&G.found.includes(i))cell.classList.add('new-item');if(G.mapSelCell===i)cell.classList.add('sel');
+    if(item){
+      const d=ITEMS[item];
+      let icon=d.icon,mapName=d.name;
+      if(item==='gem'&&G.activeGem){icon='💎';mapName=`${G.activeGem.prefix}寶石`;}
+      cell.innerHTML=`<div class="map-ci">${icon}</div><div class="map-cn">${mapName}</div>`;
+    }
+    cell.onclick=()=>onMapCell(i);g.appendChild(cell);
+  });
+  const{agi,lck,chi}=calcRS(G);document.getElementById('mbagi').textContent=agi;document.getElementById('mblck').textContent=lck;document.getElementById('mbchi').textContent=chi;
+}
+function onMapCell(idx){
+  if(G.bag[idx]){
+    if(G.mapSelCell!==null&&G.mapSelCell!==idx){const tmp=G.bag[G.mapSelCell];G.bag[G.mapSelCell]=G.bag[idx];G.bag[idx]=tmp;G.mapSelCell=null;renderMapBag();}
+    else if(G.mapSelCell===idx){G.mapSelCell=null;renderMapBag();}
+    else{G.mapSelCell=idx;renderMapBag();}
+  }else if(G.mapSelCell!==null){G.bag[idx]=G.bag[G.mapSelCell];G.bag[G.mapSelCell]=null;G.mapSelCell=null;renderMapBag();}
+}
+function showNodeChoices(){
+  const ns=document.getElementById('node-select');ns.classList.add('show');
+  const grid=document.getElementById('ns-grid');grid.innerHTML='';
+  G.map.choices.forEach(node=>{
+    const meta=NTYPE_META[node.type]||{icon:'?',label:'?'};
+    const card=document.createElement('div');card.className=`ns-card type-${node.type}`;
+    let stars='',sub='';
+    if(node.star&&node.star>0)stars=`<div class="ns-stars">${[1,2,3,4,5].map(s=>`<span class="ns-star ${s<=node.star?'on':''}">${s<=node.star?'★':'☆'}</span>`).join('')}</div>`;
+    if(['battle','elite','boss','rat'].includes(node.type)){sub=`<div class="ns-sub">${ENEMIES[node.enemyKey]?.name||''}</div>`;}
+    if(node.type==='chest')sub=`<div class="ns-sub">品質 ${'◆'.repeat(node.quality||1)}</div>`;
+    card.innerHTML=`<div class="ns-icon">${meta.icon}</div><div class="ns-name">${meta.label}</div>${stars}${sub}`;
+    card.onclick=()=>enterNode(node);grid.appendChild(card);
+  });
+}
+function enterNode(node){
+  document.getElementById('node-select').classList.remove('show');
+  if(['battle','elite','boss','rat'].includes(node.type))startBattle(node.enemyKey);
+  else if(node.type==='chest')doChest(node.quality||1);
+  else if(node.type==='slot')doSlot();
+}
+function advanceFloor(){
+  G.map.floor++;
+  if(G.map.floor>20){endExpedition('clear');return;}
+  G.map.choices=genFloorChoices(G.map.floor);
+  const ns=document.getElementById('node-select');ns.classList.remove('show');document.getElementById('ns-grid').innerHTML='';
+  renderMapFloor();save();
+  /* 每5層（5、15層）觸發藍圖三選一，10層是菁英、20層是BOSS不另外觸發 */
+  const f=G.map.floor;
+  if(f===5||f===15){
+    showBpChoice(f,()=>showNodeChoices());
+  }else{
+    showNodeChoices();
+  }
+}
+function doRetreat(){endExpedition('retreat');}
+const CPOOLS={1:['spike','wood'],2:['battle_core','piano_wire','spell_matrix'],3:['iron_ore','spell_matrix','battle_core','piano_wire']};
+function doChest(q){
+  const pool=CPOOLS[Math.min(q,3)];const us=new Set();const rws=[];
+  while(rws.length<2){const r=pool[Math.floor(Math.random()*pool.length)];if(!us.has(r)||pool.length<2){us.add(r);rws.push(r);}}
+  showMapEvent(`📦 寶箱`,`獲得：${rws.map(r=>`${ITEMS[r].icon}${ITEMS[r].name}`).join('、')}`,()=>{rws.forEach(r=>tryAddToBag(r,false));advanceFloor();});
+}
+let slotCount=0;
+function doSlot(){slotCount=0;showSlotPanel();}
+function showSlotPanel(){
+  const ns=document.getElementById('node-select');ns.classList.add('show');
+  const grid=document.getElementById('ns-grid');
+  grid.innerHTML=`<div style="flex:1"><div style="font-size:14px;font-weight:500;margin-bottom:4px">🎰 拉霸機（${slotCount}/10 次）</div><div style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.5">選擇背包物品投入，可能更好或更差。最多 10 次。</div><div id="slot-inv-btns" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div><div id="slot-result" style="font-size:13px;color:var(--text2);min-height:20px;margin-bottom:12px"></div><button class="btn-green" onclick="leaveSlot()">離開</button></div>`;
+  renderSlotInvBtns();
+}
+function renderSlotInvBtns(){
+  const el=document.getElementById('slot-inv-btns');if(!el)return;el.innerHTML='';
+  const m=new Map();G.bag.forEach((k,i)=>{if(k){if(!m.has(k))m.set(k,[]);m.get(k).push(i);}});
+  if(!m.size){el.innerHTML='<div style="font-size:12px;color:var(--text3)">背包是空的</div>';return;}
+  m.forEach((idxs,key)=>{const d=ITEMS[key];const btn=document.createElement('button');btn.className='btn-amber';btn.style.fontSize='12px';btn.innerHTML=`${d.icon} 投入 ${d.name}`;btn.disabled=slotCount>=10;btn.onclick=()=>doSlotPlay(key,idxs[0]);el.appendChild(btn);});
+}
+function doSlotPlay(key,idx){
+  if(slotCount>=10)return;slotCount++;
+  const lv={'N':1,'R':2,'SR':3,'SSR':4,'SP':3}[ITEMS[key].rarity]||1;
+  const d2=(Math.random()<.4)?1:(Math.random()<.5)?-1:0;const rl=Math.max(1,Math.min(4,lv+d2));
+  const pools={1:['spike','wood'],2:['battle_core','piano_wire'],3:['spell_matrix','iron_ore'],4:['iron_ore','spell_matrix']};
+  const pool=pools[rl],rw=pool[Math.floor(Math.random()*pool.length)];
+  G.bag[idx]=rw;if(!G.found.includes(idx))G.found.push(idx);
+  const txt=rl>lv?'✨ 更好！':rl<lv?'😬 比較差...':'差不多。';
+  const res=document.getElementById('slot-result');if(res)res.textContent=`${ITEMS[key].name} → ${ITEMS[rw].icon} ${ITEMS[rw].name}（${txt}）已執行 ${slotCount}/10 次`;
+  renderMapBag();renderSlotInvBtns();
+}
+function leaveSlot(){document.getElementById('node-select').classList.remove('show');document.getElementById('ns-grid').innerHTML='';advanceFloor();}
+function showMapEvent(title,desc,onOk){
+  const ns=document.getElementById('node-select');ns.classList.add('show');
+  const grid=document.getElementById('ns-grid');
+  grid.innerHTML=`<div style="flex:1"><div style="font-size:14px;font-weight:500;margin-bottom:6px">${title}</div><div style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6">${desc}</div><button class="btn-green" id="map-event-ok">繼續</button></div>`;
+  document.getElementById('map-event-ok').onclick=()=>{grid.innerHTML='';ns.classList.remove('show');onOk();};
+}
+
+/* ============================================================
+   EXPEDITION END
+   ============================================================ */
+function endExpedition(reason){
+  SS('result');const card=document.getElementById('result-card');
+  /* G.found 存 bag 索引，轉成 itemKey */
+  const foundKeys=reason!=='death'?G.found.map(idx=>G.bag[idx]).filter(Boolean):[];
+  /* 撤離/通關：搜刮物品中的寶石不帶回倉庫 */
+  foundKeys.forEach(k=>{if(ITEMS[k]&&!ITEMS[k].isGem)G.storage.push(k);});
+  const hasSword=G.storage.includes('rusty_sword')||G.bag.some(k=>k==='rusty_sword');
+  if(!hasSword)G.storage.push('rusty_sword');
+  const swordMsg=!hasSword?'<div style="font-size:12px;color:var(--text2);margin-top:8px">🗡 自動補發生鏽匕首到倉庫。</div>':'';
+  if(reason==='death'){G.bag=Array(G.bagSize*G.bagSize).fill(null);}
+  G.found=[];G.pendingDrops=[];G.tmpStats={agi:0,lck:0,chi:0,lckMagic:0};G.activeGem=null;
+  G.player.poison=0;G.player.shield=0;G.chiStored=0;G.enchants={};
+  const bonus=calcMaxHpBonus();G.player.maxHp=50+bonus;G.player.hp=G.player.maxHp;
+  save();
+  let title='',desc='';
+  if(reason==='clear'){title='✓ 探險成功！';desc='成功通關！搜刮物品已加入倉庫。';}
+  else if(reason==='retreat'){title='← 撤離成功';desc='安全撤離。搜刮物品已加入倉庫。';}
+  else{title='✕ 探險失敗';desc='你倒下了。搜刮物品遺失，金幣保留。背包物品全數掉落。';}
+  const m=new Map();foundKeys.filter(k=>ITEMS[k]&&!ITEMS[k].isGem).forEach(k=>m.set(k,(m.get(k)||0)+1));
+  const itemsHTML=m.size>0?[...m].map(([k,c])=>`<div class="result-chip">${ITEMS[k].icon} ${ITEMS[k].name}${c>1?` ×${c}`:''}</div>`).join(''):'<div style="color:var(--text3);font-size:12px">無搜刮物品</div>';
+  card.innerHTML=`<div class="result-title">${title}</div><div class="result-sub">${desc}</div><div class="result-items">${itemsHTML}</div>${swordMsg}<div style="margin-top:16px"><button class="btn-green" style="padding:8px 20px" onclick="goPrep()">整理裝備</button></div>`;
+}
+function goPrep(){G.selStorage=null;G.selCell=null;placeState=null;document.getElementById('place-bar').classList.remove('show');SS('prep');renderStorage();renderPrepBag();}
+
+/* ============================================================
+   BATTLE
+   ============================================================ */
+function startBattle(ekey){
+  const ed=ENEMIES[ekey];
+  const bonus=calcMaxHpBonus();G.player.maxHp=50+bonus;
+  G.enemy={key:ekey,hp:ed.maxHp,maxHp:ed.maxHp,def:ed.def,bleed:0,stun:0,rageStacks:0,hitMalus:0,armorBreak:0};
+  G.battleTurn=0;G.battleResult=null;G.pendingDrops=[];
+  G.player.defending=false;G.player.defendPct=0;G.player.parried=false;G.player.shield=0;
+  G.chiStored=0;G.enchants={};G._consumeCoreActive=false;
+  G._enchantedRecipeId=null;G._pendingEnchantRecipeId=null;G._enchantedRecipeIdDisplay=null;
+  pickAtk();SS('battle');document.getElementById('bll').innerHTML='';
+  renderBUI();
+  aLog('s',`與【${ed.name}】的戰鬥開始！`);
+  if(ed.isElite)aLog('s','⚠ 菁英怪！每回合疊加毒傷，快速擊殺！');
+  if(ed.isBoss)aLog('s','☠ BOSS！高傷害，善用 AGI 迴避與 CHI 格檔！');
+  if(G.activeGem)aLog('ltmp',`💎 ${G.activeGem.prefix}的寶石：${G.activeGem.attr.toUpperCase()} +${G.activeGem.stat}${G.activeGem.trait?'　特性：'+G.activeGem.trait.name:''}`);
+  const{agi,lck,chi}=calcRS(G);if(agi||lck||chi)aLog('s',`戰鬥屬性 — AGI:${agi} LCK:${lck} CHI:${chi}`);
+  renderActs();
+}
+function pickAtk(){const p=ENEMIES[G.enemy.key].attacks;G.nextAttack=p[Math.floor(Math.random()*p.length)];}
+function renderBUI(){
+  const ed=ENEMIES[G.enemy.key];
+  document.getElementById('ben').textContent=ed.name;document.getElementById('bes').textContent='★'.repeat(ed.star)+'☆'.repeat(5-ed.star);
+  const known=JSON.parse(localStorage.getItem('knownEnemies')||'[]');
+  const fc=document.getElementById('enemy-forecast');
+  if(known.includes(G.enemy.key)){fc.className='fw';fc.textContent=ed.forecast(G);}else{fc.className='';fc.textContent='（尚未獲得出招情報）';}
+  updHP();updBSR(G,null);
+}
+function updBSR(st,rid){
+  const{agi,lck,chi,x2a,x2l,x2c}=getBS(st,rid);
+  document.getElementById('bsagi').textContent=agi;document.getElementById('bslck').textContent=lck;document.getElementById('bschi').textContent=chi;
+  document.getElementById('bsagix').style.display=x2a?'':'none';document.getElementById('bslckx').style.display=x2l?'':'none';document.getElementById('bschix').style.display=x2c?'':'none';
+  document.getElementById('chist').textContent=st.chiStored>0?`內力蓄積：+${st.chiStored}`:'';
+  /* 閾值標籤 */
+  const tagi=document.getElementById('thresh-agi'),tlck=document.getElementById('thresh-lck'),tchi=document.getElementById('thresh-chi');
+  tagi.innerHTML=agi>=40?'<span class="thresh-tag thresh-agi">必4連</span>':agi>=20?'<span class="thresh-tag thresh-agi">必2連</span>':'';
+  tlck.innerHTML=lck>=40?'<span class="thresh-tag thresh-lck">爆擊×4</span>':lck>=20?'<span class="thresh-tag thresh-lck">必閃電</span>':'';
+  tchi.innerHTML=chi>=40?'<span class="thresh-tag thresh-chi">雙倍奉還</span>':chi>=20?'<span class="thresh-tag thresh-chi">格檔反打</span>':'';
+  /* 格檔機率即時顯示 */
+  const parryPct=Math.round(prob(chi,SK.parry)*100);
+  document.getElementById('parry-pct-display').textContent=chi>0?`格檔${parryPct}%`:'';
+  /* 附魔武器亮起提示 */
+  const enchLabel=document.getElementById('thresh-lck');/* 複用位置略 */
+}
+function updHP(){
+  const p=G.player,e=G.enemy;
+  const pp=(p.hp/p.maxHp)*100,ep=(e.hp/e.maxHp)*100;
+  const pf=document.getElementById('phf');pf.style.width=pp+'%';pf.className='hf'+(pp<25?' crit':pp<50?' low':'');
+  document.getElementById('php').textContent=`${p.hp}/${p.maxHp}`;
+  /* 護盾條 */
+  const shieldPct=p.maxHp>0?Math.min(25,(p.shield/p.maxHp)*100):0;
+  document.getElementById('shield-bar').style.width=shieldPct+'%';
+  document.getElementById('shield-val').textContent=p.shield>0?` 🛡${p.shield}`:'';
+  const ef=document.getElementById('ehf');ef.style.width=ep+'%';ef.className='hf'+(ep<25?' crit':ep<50?' low':'');
+  document.getElementById('ehp').textContent=`${e.hp}/${e.maxHp}`;
+  document.getElementById('enbar').textContent=ENEMIES[G.enemy.key].name;
+  document.getElementById('thp').textContent=`${p.hp}/${p.maxHp}`;
+  const pt=document.getElementById('ptags');pt.innerHTML='';if(p.poison>0)pt.innerHTML+=`<span class="ct">毒 ${p.poison}</span>`;if(p.shield>0)pt.innerHTML+=`<span class="ct" style="color:var(--shield-color)">護盾 ${p.shield}</span>`;
+  const et=document.getElementById('etags');et.innerHTML='';if(e.bleed>0)et.innerHTML+=`<span class="ct">流血 ${e.bleed}</span>`;if(e.stun>0)et.innerHTML+=`<span class="ct">暈</span>`;if(e.armorBreak>0)et.innerHTML+=`<span class="ct">破甲${e.armorBreak}回</span>`;
+}
+function renderActs(){
+  if(G.battleResult)return;
+  const btns=document.getElementById('ab');btns.innerHTML='';
+  const av=new Map();
+  av.set('flee',null);
+  if(G.bag.includes('rusty_sword'))av.set('stab',null);
+  if(G.bag.includes('wood_dagger'))av.set('wood_stab',null);
+  const{active}=DAknown(G.bag,G.bagSize,G.blueprints);
+  active.forEach(({recipe:r})=>{
+    if(r.action)av.set(r.action,r.id);
+    if(r.action_defend)av.set(r.action_defend,r.id);
+    if(r.action_parry)av.set(r.action_parry,r.id);
+  });
+  const known=JSON.parse(localStorage.getItem('knownEnemies')||'[]');
+  if(!known.includes(G.enemy.key))av.delete('parry');
+  av.forEach((rid,aid)=>{
+    const action=ACTIONS[aid];if(!action)return;
+    let hint='',enchanted=false;
+    if(rid){const r=RECIPES.find(r=>r.id===rid);if(r){const pts=[];if(r.agi)pts.push(`AGI+${r.agi*2}`);if(r.lck)pts.push(`LCK+${r.lck*2}`);if(r.chi)pts.push(`CHI+${r.chi*2}`);if(pts.length)hint=`<span class="bh">[${pts.join(' ')}]</span>`;if(G._enchantedRecipeId===rid)enchanted=true;}}
+    const btn=document.createElement('button');
+    btn.className=`ab ${action.type}${enchanted?' enchanted-act':''}`;
+    if(aid==='flee')btn.innerHTML=`${action.label} <span class="bh">${calcFleeChance()}%</span>`;
+    else btn.innerHTML=`${action.label}${hint}`;
+    btn.onclick=()=>doAct(aid,rid);btns.appendChild(btn);
+  });
+  /* 消耗按鈕：背包有可消耗素材時顯示 */
+  const hasConsumable=G.bag.some(k=>k&&CONSUME_EFFECTS[k]);
+  if(hasConsumable){
+    const btn=document.createElement('button');
+    btn.className='ab consume';
+    btn.innerHTML='🗺 消耗物品 <span class="bh">永久</span>';
+    btn.onclick=()=>openConsumeMode();
+    btns.appendChild(btn);
+  }
+}
+function aLog(cls,text){const log=document.getElementById('bll'),line=document.createElement('div');line.className=`ll l${cls}`;line.textContent=text;log.appendChild(line);document.getElementById('blw').scrollTop=9999;}
+function aLogs(lines){lines.forEach(l=>aLog(l.c.replace(/^l/,''),l.t));}
+function closeStatPopup(){document.getElementById('stat-popup').classList.remove('show');}
+
+function doAct(aid,rid){
+  const action=ACTIONS[aid];if(!action)return;
+  G.battleTurn++;aLog('s',`── 回合 ${G.battleTurn} ──`);
+  /* 附魔武器：pending變active */
+  G._enchantedRecipeId=G._pendingEnchantRecipeId||null;
+  G._pendingEnchantRecipeId=null;
+  G.player.defending=false;G.player.defendPct=0;G.player.parried=false;
+  const logs=action.execute(G,rid);aLogs(logs);
+  G._enchantedRecipeId=null; /* 本回合使用完畢 */
+  if(G.enemy.hp<=0){endBattle('win');return;}
+  if(G.battleResult==='fled'){setTimeout(()=>endExpedition('retreat'),800);return;}
+  setTimeout(()=>{enemyTurn();if(!G.battleResult)renderActs();updHP();},450);
+}
+
+function enemyTurn(){
+  if(G.battleResult)return;
+  const ed=ENEMIES[G.enemy.key];const{agi,lck,chi}=calcRS(G);
+  /* 鐵甲碎片：每回合護盾+5 */
+  if(G.bag.includes('iron_shard')){G.player.shield=(G.player.shield||0)+5;aLog('lshield',`鐵甲碎片：護盾 +5（現在：${G.player.shield}）`);}
+  /* 鐵環 builtin：每回合護盾+10 */
+  const{active:ringActive}=DAknown(G.bag,G.bagSize,G.blueprints);
+  const ringRec=ringActive.find(a=>a.recipe.id==='iron_ring');
+  if(ringRec&&ringRec.recipe.builtinShieldRegen){G.player.shield=(G.player.shield||0)+ringRec.recipe.builtinShieldRegen;aLog('lshield',`鐵環：護盾 +${ringRec.recipe.builtinShieldRegen}（現在：${G.player.shield}）`);}
+  /* 十字架回血 */
+  const regen=calcHpRegenPct();if(regen>0){const h=Math.round(G.player.maxHp*regen);G.player.hp=Math.min(G.player.maxHp,G.player.hp+h);aLog('lheal',`十字架回血 ${h} HP。`);}
+  /* 玩家毒傷 */
+  if(G.player.poison>0){G.player.hp=Math.max(0,G.player.hp-G.player.poison);aLog('lpo',`毒傷！損失 ${G.player.poison} HP。`);if(G.player.hp<=0){endBattle('lose');return;}}
+  if(ed.specialMechanic==='poison_stack'){G.player.poison=(G.player.poison||0)+1;aLog('lpo',`史萊姆毒素！毒傷層數 +1（現在：${G.player.poison}）`);}
+  /* 敵方流血 */
+  if(G.enemy.bleed>0){G.enemy.hp=Math.max(0,G.enemy.hp-G.enemy.bleed);aLog('lr',`${ed.name} 流血，損失 ${G.enemy.bleed} HP。`);if(G.enemy.hp<=0){endBattle('win');return;}}
+  /* 破甲回合遞減 */
+  if(G.enemy.armorBreak>0)G.enemy.armorBreak--;
+  /* 擊暈 */
+  if(G.enemy.stun>0){G.enemy.stun--;aLog('ls',`${ed.name} 被擊暈，跳過行動！`);pickAtk();renderBUI();_endEnemyTurn(chi);return;}
+  /* AGI迴避 */
+  if(roll(agi,SK.dodge)){aLog('la',`迴避！你躲開了 ${ed.name} 的攻擊！`);pickAtk();renderBUI();_endEnemyTurn(chi);return;}
+  /* 寶石特性：武器丟失 */
+  if(G.activeGem?.trait?.id==='weapon_backfire'&&Math.random()<.05){
+    G.enemy.hp=Math.max(0,G.enemy.hp-20);G.enemy.hitMalus=(G.enemy.hitMalus||0)+3;
+    aLog('lr',`怪物的失誤！${ed.name} 插到自己眼睛 -20 HP，命中率下降！`);if(G.enemy.hp<=0){endBattle('win');return;}
+  }
+  /* 命中率降低 */
+  if(G.enemy.hitMalus>0&&Math.random()<.10){G.enemy.hitMalus--;aLog('la',`${ed.name} 攻擊失誤！`);pickAtk();renderBUI();_endEnemyTurn(chi);return;}
+  /* 彈反 */
+  if(G.player.parried){aLog('lparry',`彈反擋下了攻擊！`);pickAtk();renderBUI();_endEnemyTurn(chi);return;}
+  const atk=G.nextAttack;const rage=G.enemy.rageStacks||0;
+  let dmg=Math.max(1,Math.round(atk.dmg*(1+rage*.2)));
+  /* 防禦 */
+  if(G.player.defending){dmg=Math.max(0,Math.round(dmg*(1-G.player.defendPct)));aLog('ldefend',`防禦！傷害減免後剩 ${dmg}。`);
+    /* 盾牌熟練：下回合CHI+4 */
+    const{active}=DAknown(G.bag,G.bagSize,G.blueprints);
+    const shieldRec=active.find(a=>a.recipe.id==='wood_shield'||a.recipe.id==='iron_shield');
+    if(shieldRec&&shieldRec.recipe.builtinShieldChi){G.tmpStats.chi+=4;aLog('ltmp','盾牌：防禦成功，下回合CHI +4！');}
+  }
+  /* CHI格檔 */
+  if(roll(chi,SK.parry)){
+    dmg=Math.max(0,Math.round(dmg*.3));aLog('lch','格檔！大幅減少傷害！');
+    if(chi>=20){const counter=Math.round(calcATKAll(G)*.10);G.enemy.hp=Math.max(0,G.enemy.hp-counter);aLog('lch',`格檔反打！造成 ${counter} 傷害！`);}
+  }
+  /* CHI吸收 */
+  if(roll(chi,SK.absorb)){
+    const abs=Math.round(dmg*.4);let stored=abs;
+    if(chi>=40)stored=abs*2; /* 雙倍奉還 */
+    G.chiStored=(G.chiStored||0)+stored;dmg=Math.max(1,dmg-abs);
+    aLog('lch',`吸收 ${abs} 點傷害化為內力${chi>=20?'（雙倍奉還！）':''}！`);
+  }
+  /* 護盾吸收 */
+  if(G.player.shield>0){const absorbed=Math.min(G.player.shield,dmg);G.player.shield-=absorbed;dmg-=absorbed;if(absorbed>0)aLog('lshield',`護盾吸收 ${absorbed} 傷害！（剩餘護盾：${G.player.shield}）`);}
+  let counter=0;if(roll(agi,SK.counter))counter=Math.round(calcATKAll(G)*.4);
+  G.player.hp=Math.max(0,G.player.hp-dmg);
+  if(dmg>0)aLog('le',`${ed.name}「${atk.name}」！對你造成 ${dmg} 傷害。`);
+  if(atk.effect==='bleed1')aLog('le','你開始流血。');
+  if(atk.effect==='stun1')aLog('le','你被擊暈了！');
+  if(atk.effect==='poison2'){G.player.poison=(G.player.poison||0)+2;aLog('lpo',`毒液！毒傷 +2（現在：${G.player.poison}）`);}
+  if(atk.effect==='poison3'){G.player.poison=(G.player.poison||0)+3;aLog('lpo',`詛咒！毒傷 +3（現在：${G.player.poison}）`);}
+  if(atk.effect==='rage'){G.enemy.rageStacks=(G.enemy.rageStacks||0)+1;aLog('le',`${ed.name} 進入狂怒！`);}
+  if(atk.effect==='double'&&G.player.hp>0){let d2=Math.max(1,Math.round(atk.dmg*(1+rage*.2)));if(G.player.shield>0){const a=Math.min(G.player.shield,d2);G.player.shield-=a;d2-=a;}G.player.hp=Math.max(0,G.player.hp-d2);aLog('le',`連擊第二擊！再造成 ${d2} 傷害。`);}
+  if(atk.effect==='split_heal'&&G.enemy.hp<G.enemy.maxHp*.5){const h=Math.round(G.enemy.maxHp*.1);G.enemy.hp=Math.min(G.enemy.maxHp,G.enemy.hp+h);aLog('lr',`史萊姆分裂！回復 ${h} HP！`);}
+  if(counter>0&&G.enemy.hp>0){G.enemy.hp=Math.max(0,G.enemy.hp-counter);aLog('la',`反擊！趁隙還擊 ${counter} 傷害！`);if(G.enemy.hp<=0){endBattle('win');return;}}
+  if(G.player.hp<=0){endBattle('lose');return;}
+  /* 尖刺叢：反傷 */
+  const{active:thornsActive}=DAknown(G.bag,G.bagSize,G.blueprints);
+  const thornsRec=thornsActive.find(a=>a.recipe.id==='spike_bush');
+  if(thornsRec&&dmg>0){
+    const thornDmg=thornsRec.recipe.builtinThornDmg||3;
+    G.enemy.hp=Math.max(0,G.enemy.hp-thornDmg);
+    aLog('lr',`尖刺叢反傷！${ENEMIES[G.enemy.key].name} 受到 ${thornDmg} 傷害！`);
+    if(G.enemy.hp<=0){endBattle('win');return;}
+  }
+  pickAtk();renderBUI();updBSR(G,null);
+  _endEnemyTurn(chi);
+}
+function _endEnemyTurn(chi){
+  /* CHI：回合結束觸發護盾（當前HP的25%） */
+  if(roll(chi,SK.parry)){ /* 同格檔機率觸發護盾 */
+    const sh=Math.round(G.player.hp*.25);
+    if(sh>0&&G.player.shield===0){G.player.shield=sh;aLog('lshield',`內力護盾！獲得 ${sh} 點護盾（若未被打破則持續至戰鬥結束）。`);updHP();}
+  }
+}
+
+function endBattle(result){
+  G.battleResult=result;document.getElementById('ab').innerHTML='';document.getElementById('al').textContent='';
+  const ed=ENEMIES[G.enemy.key];
+  if(result==='win'){
+    aLog('ls',`【${ed.name}】被擊敗！`);
+    const g=rollGold(ed.star);G.gold+=g;aLog('lgold',`獲得 💰 ${g} 金幣！`);
+    const known=JSON.parse(localStorage.getItem('knownEnemies')||'[]');
+    if(!known.includes(G.enemy.key)){known.push(G.enemy.key);localStorage.setItem('knownEnemies',JSON.stringify(known));aLog('ls',`首次擊敗！解鎖【${ed.name}】出招情報。`);}
+    /* 鄉下老鼠掉落率四分之一 */
+    const dropRate=ed.isRat ? .025 : .10;
+    (ed.drops||[]).forEach(d=>{if(Math.random()<dropRate){tryAddToBag(d,true);aLog('lr',`掉落：${ITEMS[d].icon} ${ITEMS[d].name}`);}});
+    /* 稀有掉落物 */
+    const _rollRareDrop=(rd)=>{
+      if(!rd)return;
+      const isFirstKill=!known.includes(G.enemy.key);
+      const hit=rd.firstKillGuaranteed&&isFirstKill?true:Math.random()<rd.rate;
+      if(hit){tryAddToBag(rd.key,true);aLog('lr',`✦ 稀有掉落：${ITEMS[rd.key].icon} ${ITEMS[rd.key].name}！`);}
+    };
+    _rollRareDrop(ed.rareDrop);
+    _rollRareDrop(ed.rareDropAlt);
+    /* 局內+1屬性 */
+    const attrs=['agi','lck','chi'];const chosen=attrs[Math.floor(Math.random()*attrs.length)];
+    G.tmpStats[chosen]=(G.tmpStats[chosen]||0)+1;aLog('ltmp',`✦ 戰勝獎勵：${chosen.toUpperCase()} 暫時 +1（本次探險有效）`);
+    /* BUG FIX: 戰後恢復全血 */
+    G.player.poison=0;G.player.shield=0;
+    G.player.hp=G.player.maxHp;
+    updHP();save();
+    setTimeout(()=>{
+      document.getElementById('stat-popup-text').textContent=`${chosen.toUpperCase()} +1`;
+      document.getElementById('stat-popup-sub').textContent='本次探險有效，撤離後消失。';
+      document.getElementById('stat-popup').classList.add('show');
+      flushBpQueue(()=>{
+        /* BUG FIX: swap關閉後執行的繼續按鈕 */
+        const showContinue=()=>{
+          const btn=document.createElement('button');btn.textContent='繼續探險';btn.style.cssText='font-size:13px;padding:8px 20px;border-color:var(--green);color:var(--green)';btn.onclick=()=>{SS('map');renderMapFloor();advanceFloor();};document.getElementById('ab').appendChild(btn);
+        };
+        if(G.pendingDrops.length>0){
+          const items=[...G.pendingDrops];G.pendingDrops=[];const ov=[];
+          items.forEach(k=>{const e=G.bag.indexOf(null);if(e!==-1){G.bag[e]=k;G.found.push(e);}else ov.push(k);});
+          if(ov.length>0){G._afterSwapContinue=showContinue;openSwap(ov);}
+          else showContinue();
+        }else showContinue();
+      });
+    },600);
+  }else if(result==='lose'){
+    aLog('ls','你倒下了...');aLog('ls','搜刮物品遺失，金幣保留。背包物品全數掉落。');updHP();
+    const btn=document.createElement('button');btn.textContent='結束探險';btn.style.cssText='font-size:13px;padding:8px 20px;border-color:var(--red);color:var(--red)';btn.onclick=()=>endExpedition('death');document.getElementById('ab').appendChild(btn);
+  }
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+(function(){
+  load();G.selStorage=null;G.selCell=null;G.mapSelCell=null;
+  G.tmpStats={agi:0,lck:0,chi:0,lckMagic:0};G.activeGem=null;G._afterSwapContinue=null;
+  SS('prep');renderStorage();renderPrepBag();updTopBar();
+  if(!localStorage.getItem('tutDone')){localStorage.setItem('tutDone','1');showTutorial();}
+})();
+</script>
+</body>
+</html>
