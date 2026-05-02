@@ -105,8 +105,33 @@ button:hover{background:#3a3a3a;}button:active{transform:scale(.98);}button:disa
 
 /* PREP */
 #screen-prep{flex-direction:row;align-items:stretch;}
-#prep-left{flex:1;display:flex;flex-direction:column;gap:12px;padding:16px;min-width:0;}
-#prep-right{width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:10px;padding:16px;border-left:.5px solid var(--border);background:var(--bg2);}
+/* ── 準備畫面 ── */
+/* 手機：單欄，底部佔位 */
+#screen-prep{flex-direction:column;padding-bottom:56px;}
+#prep-left{display:flex;flex:1;flex-direction:column;gap:10px;padding:12px 14px;}
+#prep-right{display:none;}
+/* 手機：物品資訊和配方偵測放在背包後面 */
+#infopanel{order:3;}
+#prep-recipe-panel{order:4;}
+#prep-storage-panel{order:1;}
+#prep-bag-panel{order:2;}
+/* 手機底部BAR */
+#prep-mobile-bar{
+  display:flex;position:fixed;bottom:0;left:0;right:0;
+  background:var(--bg2);border-top:.5px solid var(--border);z-index:100;
+}
+#prep-mobile-bar button{
+  flex:1;font-size:11px;padding:10px 2px;border:none;border-radius:0;
+  background:transparent;color:var(--text2);
+  border-right:.5px solid var(--border);position:relative;
+}
+#prep-mobile-bar button:last-child{border-right:none;}
+#prep-mobile-bar .btn-green{color:var(--green);}
+/* 桌面：右欄按鈕列始終顯示 */
+@media(min-width:640px){
+  #prep-right{display:flex;}
+  #prep-mobile-bar{display:none;}
+}
 #storage-grid{display:flex;flex-wrap:wrap;gap:5px;}
 .stk-chip{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:var(--rs);border:.5px solid var(--border2);background:var(--bg3);cursor:pointer;font-size:12px;transition:background .1s;}
 .stk-chip:hover{background:#383838;}.stk-chip.sel{border-color:var(--blue);background:var(--blue-bg);}
@@ -402,8 +427,12 @@ button:hover{background:#3a3a3a;}button:active{transform:scale(.98);}button:disa
 
 <!-- PREP -->
 <div id="screen-prep" class="screen active">
+
+  <!-- 左欄（桌面：倉庫+背包 / 手機：全部） -->
   <div id="prep-left">
-    <div class="panel">
+
+    <!-- 倉庫 + 設計圖 tab -->
+    <div class="panel" id="prep-storage-panel">
       <div class="prep-nav">
         <button id="tab-storage" class="active-tab" onclick="showTab('storage')">倉庫</button>
         <button id="tab-recipe" onclick="showTab('recipe')">設計圖</button>
@@ -421,7 +450,9 @@ button:hover{background:#3a3a3a;}button:active{transform:scale(.98);}button:disa
         <div id="recipe-list-full"></div>
       </div>
     </div>
-    <div class="panel">
+
+    <!-- 背包 -->
+    <div class="panel" id="prep-bag-panel">
       <div class="pl">出發背包</div>
       <div id="prep-bag"></div>
       <div id="place-bar">
@@ -431,18 +462,27 @@ button:hover{background:#3a3a3a;}button:active{transform:scale(.98);}button:disa
         <button id="place-cancel-btn" onclick="placeCancel()">取消</button>
       </div>
     </div>
-  </div>
-  <div id="prep-right">
+
+    <!-- 物品資訊（手機：背包後；桌面：右欄） -->
     <div class="panel" id="infopanel">
       <div class="pl">物品資訊</div>
       <div style="color:var(--text3);font-size:12px">點選物品查看詳情</div>
     </div>
-    <div class="panel">
+
+    <!-- 配方偵測（手機：最後可下滑；桌面：右欄） -->
+    <div class="panel" id="prep-recipe-panel">
       <div class="pl">配方偵測</div>
       <div id="recipe-list"></div>
       <button id="cbb" onclick="toggleCB()" style="width:100%;margin-top:8px">設計圖速覽 ▸</button>
       <div id="cbp"></div>
     </div>
+
+  </div>
+
+  <!-- 右欄（桌面專用） -->
+  <div id="prep-right">
+    <!-- infopanel 和 prep-recipe-panel 由 JS 搬入（桌面版） -->
+    <div id="prep-right-panels"></div>
     <div style="display:flex;gap:8px;margin-top:auto;flex-direction:column;">
       <div style="display:flex;gap:6px">
         <button class="btn-amber" style="flex:1;font-size:12px;padding:7px 0" onclick="SS('shop');renderShop()">商店</button>
@@ -453,6 +493,18 @@ button:hover{background:#3a3a3a;}button:active{transform:scale(.98);}button:disa
       <button class="btn-green" style="font-size:13px;padding:9px 0" onclick="startExpedition()">出發探險 →</button>
     </div>
   </div>
+
+  <!-- 手機版固定底部 BAR -->
+  <div id="prep-mobile-bar">
+    <button onclick="SS('shop');renderShop()">🛒 商店</button>
+    <button id="forge-unlock-btn-m" onclick="tryOpenForge()">🔥 大煉鋼</button>
+    <button id="dig-btn-m" onclick="doDig()">
+      <span id="dig-label-m">⛏ 挖掘</span>
+      <div id="dig-cd-bar-m" style="position:absolute;bottom:0;left:0;height:3px;background:var(--amber);width:0%;pointer-events:none"></div>
+    </button>
+    <button class="btn-green" onclick="startExpedition()">出發 →</button>
+  </div>
+
 </div>
 
 <!-- SHOP -->
@@ -2153,6 +2205,7 @@ function doDig(){
 
   /* 啟動冷卻 */
   btn.disabled=true;
+  const btnM=document.getElementById('dig-btn-m');if(btnM)btnM.disabled=true;
   digCdStart=Date.now();
   if(digCdRaf)cancelAnimationFrame(digCdRaf);
   _digCdTick();
@@ -2169,12 +2222,19 @@ function _digCdTick(){
   const mm=Math.floor(secsLeft/60);const ss=String(secsLeft%60).padStart(2,'0');
   bar.style.width=(100-Math.round(pct*100))+'%';
   lbl.textContent=`⛏ 挖掘中… ${mm}:${ss}`;
+  /* 手機版同步 */
+  const lblM=document.getElementById('dig-label-m');
+  const barM=document.getElementById('dig-cd-bar-m');
+  if(lblM)lblM.textContent=`⛏ ${mm}:${ss}`;
+  if(barM)barM.style.width=(100-Math.round(pct*100))+'%';
   if(pct<1){
     digCdRaf=requestAnimationFrame(_digCdTick);
   }else{
     bar.style.width='0%';
     lbl.textContent='⛏ 挖掘';
     btn.disabled=false;
+    const lblM=document.getElementById('dig-label-m');const barM=document.getElementById('dig-cd-bar-m');const btnM=document.getElementById('dig-btn-m');
+    if(lblM)lblM.textContent='⛏ 挖掘';if(barM)barM.style.width='0%';if(btnM)btnM.disabled=false;
   }
 }
 
@@ -2586,6 +2646,7 @@ function getPlaceCells(rec, startIdx, rotation){
 
 /* 進入放置模式 */
 function enterPlaceMode(recipeId){
+  closePrepSidebar();
   const rec=RECIPES.find(r=>r.id===recipeId);
   if(!rec)return;
   placeState={recipeId, rotation:0, hoverIdx:null};
@@ -2956,17 +3017,20 @@ function tryOpenForge(){
 function updateBestFloor(f){
   const best=parseInt(localStorage.getItem('bestFloor')||'0');
   if(f>best)localStorage.setItem('bestFloor',String(f));
-  const btn=document.getElementById('forge-unlock-btn');
-  if(!btn)return;
-  if(forgeUnlocked()){
-    btn.className='btn-amber';
-    btn.style.cssText='flex:1;font-size:12px;padding:7px 0';
-    btn.title='大煉鋼';
-  }else{
-    btn.className='';
-    btn.style.cssText='flex:1;font-size:12px;padding:7px 0;background:#222;color:#555;border-color:#333;cursor:pointer';
-    btn.title='通過10層後解鎖';
-  }
+  const unlocked=forgeUnlocked();
+  ['forge-unlock-btn','forge-unlock-btn-m'].forEach(id=>{
+    const btn=document.getElementById(id);if(!btn)return;
+    if(unlocked){btn.className=id==='forge-unlock-btn'?'btn-amber':'';btn.style.cssText=id==='forge-unlock-btn'?'flex:1;font-size:12px;padding:7px 0':'';btn.style.color=unlocked?'':'';}
+    else{btn.className='';btn.style.color='#555';btn.style.background='#222';if(id==='forge-unlock-btn'){btn.style.flex='1';btn.style.fontSize='12px';btn.style.padding='7px 0';btn.style.borderColor='#333';}}
+  });
+}
+function openPrepSidebar(){
+  document.getElementById('prep-right').classList.add('open');
+  document.getElementById('sidebar-backdrop').style.display='block';
+}
+function closePrepSidebar(){
+  document.getElementById('prep-right').classList.remove('open');
+  document.getElementById('sidebar-backdrop').style.display='none';
 }
 function renderForge(){forgeSelected=[];forgePreview=null;renderForgePool();renderForgePreview();}
 function renderForgePool(){
@@ -3756,7 +3820,29 @@ function endExpedition(reason){
   const itemsHTML=m.size>0?[...m].map(([k,c])=>`<div class="result-chip">${ITEMS[k].icon} ${ITEMS[k].name}${c>1?` ×${c}`:''}</div>`).join(''):'<div style="color:var(--text3);font-size:12px">無搜刮物品</div>';
   card.innerHTML=`<div class="result-title">${title}</div><div class="result-sub">${desc}</div><div class="result-items">${itemsHTML}</div>${swordMsg}<div style="margin-top:16px"><button class="btn-green" style="padding:8px 20px" onclick="goPrep()">整理裝備</button></div>`;
 }
-function goPrep(){G.selStorage=null;G.selCell=null;placeState=null;document.getElementById('place-bar').classList.remove('show');SS('prep');renderStorage();renderPrepBag();updateBestFloor(0);setTimeout(tryTutPrep,300);}
+function _arrangePrepPanels(){
+  const isDesktop=window.innerWidth>=640;
+  const rightPanels=document.getElementById('prep-right-panels');
+  const prepLeft=document.getElementById('prep-left');
+  const infopanel=document.getElementById('infopanel');
+  const recipePanel=document.getElementById('prep-recipe-panel');
+  if(!rightPanels||!prepLeft||!infopanel||!recipePanel)return;
+  if(isDesktop){
+    /* 桌面：搬到右欄 */
+    if(!rightPanels.contains(infopanel))rightPanels.appendChild(infopanel);
+    if(!rightPanels.contains(recipePanel))rightPanels.appendChild(recipePanel);
+  }else{
+    /* 手機：放回左欄，背包之後 */
+    const bagPanel=document.getElementById('prep-bag-panel');
+    if(!prepLeft.contains(infopanel)){
+      bagPanel?bagPanel.after(infopanel):prepLeft.appendChild(infopanel);
+    }
+    if(!prepLeft.contains(recipePanel)){
+      infopanel.after?infopanel.after(recipePanel):prepLeft.appendChild(recipePanel);
+    }
+  }
+}
+function goPrep(){G.selStorage=null;G.selCell=null;placeState=null;document.getElementById('place-bar').classList.remove('show');SS('prep');renderStorage();renderPrepBag();updateBestFloor(0);_arrangePrepPanels();setTimeout(tryTutPrep,300);}
 
 /* ============================================================
    BATTLE
