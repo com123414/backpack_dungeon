@@ -3290,7 +3290,7 @@ function showUnknownEvent(eventId,nodeIdx){
     });
     wrap.appendChild(document.createTextNode('選擇要送入裂縫的格子：'));
     wrap.appendChild(bagGrid2);
-    if(ev.canLeave){const lb=document.createElement('button');lb.textContent='離開';lb.style.cssText='font-size:11px;padding:4px 0;border-color:var(--border2);color:var(--text3)';lb.onclick=()=>{ns.classList.remove('show');grid.innerHTML='';completeNode(nodeIdx);};wrap.appendChild(lb);}
+    const lb=document.createElement('button');lb.textContent='不了，直接離開';lb.style.cssText='font-size:12px;padding:6px 0;width:100%;margin-top:8px;border-color:var(--border2);color:var(--text3)';lb.onclick=()=>{ns.classList.remove('show');grid.innerHTML='';completeNode(nodeIdx);};wrap.appendChild(lb);
   }else if(eventId==='collapse'){
     ev.choices.forEach((label,i)=>{
       const b=document.createElement('button');b.textContent=label;b.style.cssText='padding:7px 0;font-size:12px';
@@ -3522,7 +3522,7 @@ function showCatNode(nodeIdx){
     if(grade==='perfect'){
       const unknown=RECIPES.filter(r=>!G.blueprints.includes(r.id)&&!DEFAULT_BLUEPRINTS.includes(r.id)&&!ADVANCED_BLUEPRINTS.includes(r.id)&&!MILESTONE_ALL.includes(r.id));
       if(unknown.length){const rec=unknown[Math.floor(Math.random()*unknown.length)];G.blueprints.push(rec.id);save();bpQueue.push(rec.id);}
-      G.gold+=50;reward='隨機藍圖 + 💰50';
+      G.gold+=50;reward='隨機設計圖 + 💰50';
     }else if(grade==='good'){
       const R=['iron_ore','spell_matrix','battle_core','piano_wire'];grantItem(R[Math.floor(Math.random()*R.length)]);G.gold+=30;reward='R素材 + 💰30';
     }else if(grade==='ok'){
